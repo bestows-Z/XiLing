@@ -45,6 +45,7 @@ func _ready() -> void:
 	controls.setup(get_window(), test_mode)
 	controls.menu_requested.connect(_show_menu)
 	controls.quit_requested.connect(_quit)
+	controls.visibility_changed.connect(_set_hidden)
 	menu.action_requested.connect(_interact)
 	menu.skin_requested.connect(func(mode: StringName) -> void: runtime.settings.set_value("skin", String(mode)))
 	menu.setting_changed.connect(runtime.settings.set_value)
@@ -60,6 +61,7 @@ func _ready() -> void:
 	desktop.restore_position(runtime.position)
 	_select_skin(StringName(runtime.settings.values["skin"]))
 	menu.configure_platform(desktop.wayland, controls.available)
+	menu.set_character_name(runtime.profile.display_name)
 	get_window().close_requested.connect(_quit)
 	get_window().focus_exited.connect(_cancel_drag)
 	get_window().dpi_changed.connect(func() -> void: desktop.keep_on_screen())
@@ -111,6 +113,7 @@ func is_mouse_on_pet() -> bool:
 	return visual.hit_test(point) if skin.mode == &"native" else skin.hit_test(point)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if controls.hidden: return
 	if event is InputEventMouseMotion:
 		if menu.is_open(): return
 		if _left_pending: desktop.handle_motion(event.relative)
@@ -207,6 +210,15 @@ func _on_action_changed(action: StringName) -> void:
 		var value: Variant = words[action]
 		menu.say(value.pick_random() if value is Array else value)
 
+func _set_hidden(value: bool) -> void:
+	_cancel_drag()
+	effects.stop_game()
+	get_parent().visible = not value
+	menu.suspended = value
+	menu.close()
+	if value: menu.hint.hide()
+	desktop.set_hidden(value)
+
 func _show_menu() -> void:
 	_cancel_drag()
 	if not menu.is_open(): menu.toggle(brain.snapshot())
@@ -231,6 +243,7 @@ func _apply_settings() -> void:
 func _on_setting_changed(key: String, _value: Variant) -> void:
 	if key == "character":
 		runtime.load_profile()
+		menu.set_character_name(runtime.profile.display_name)
 		skin.configure(runtime.profile)
 		animator.profile = runtime.profile
 		runtime.settings.values["skin"] = "auto"

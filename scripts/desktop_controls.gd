@@ -1,11 +1,13 @@
 extends Node
 signal menu_requested
 signal quit_requested
+signal visibility_changed(hidden: bool)
 var indicator: StatusIndicator
 var tray_menu: PopupMenu
 var available: bool = false
 var _window: Window
 var _return_timer: float = 0.0
+var hidden: bool = false
 
 func setup(window: Window, test_mode: bool) -> void:
 	_window = window
@@ -41,14 +43,17 @@ func _select(id: int) -> void:
 
 func show_pet() -> void:
 	_return_timer = 0.0
-	_window.show()
+	hidden = false
+	visibility_changed.emit(false)
 	_window.grab_focus()
 
 func hide_pet() -> void:
+	if DisplayServer.get_name().to_lower() == "wayland": return
 	# 图标不可见或平台不支持时只能短暂隐藏，避免永久失联。
 	var recoverable: bool = available and indicator != null and indicator.get_rect().size.length() > 0.0
 	_return_timer = 0.0 if recoverable else 10.0
-	_window.hide()
+	hidden = true
+	visibility_changed.emit(true)
 
 func _process(delta: float) -> void:
 	if _return_timer > 0.0:

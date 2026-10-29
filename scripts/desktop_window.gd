@@ -7,6 +7,7 @@ var native_drag: bool = false
 var moved: bool = false
 var enabled: bool = true
 var wayland: bool = false
+var suppressed: bool = false
 var _press_mouse: Vector2i
 var _press_window: Vector2i
 var _outline_timer: float = 0.0
@@ -89,7 +90,7 @@ func keep_on_screen() -> void:
 	)
 
 func update_outline(points: PackedVector2Array, delta: float, modal: bool = false) -> void:
-	if not enabled or wayland:
+	if not enabled or wayland or suppressed:
 		return
 	_outline_timer -= delta
 	if _outline_timer > 0.0 and not modal:
@@ -117,3 +118,13 @@ func restore_position(value: Variant) -> void:
 	if enabled and not wayland and value is Vector2i:
 		window.position = value
 		keep_on_screen()
+
+func set_hidden(value: bool) -> void:
+	suppressed = value
+	if not enabled or wayland: return
+	window.mouse_passthrough = value
+	if value:
+		# 主窗口不能 hide；空绘制配合窗外输入区域实现隐藏和全穿透。
+		window.mouse_passthrough_polygon = PackedVector2Array([Vector2(-10, -10), Vector2(-9, -10), Vector2(-9, -9)])
+	else:
+		_outline_timer = 0.0

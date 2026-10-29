@@ -23,4 +23,6 @@ window/per_pixel_transparency/allowed=true
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 viewport/transparent_background=true
+textures/vram_compression/import_etc2_astc=true
+textures/vram_compression/import_s3tc_bptc=true
 textures/default_filters/use_nearest_mipmap_filter=false

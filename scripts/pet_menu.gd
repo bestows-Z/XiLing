@@ -15,6 +15,8 @@ var _topmost_toggle: CheckButton
 var _hint_time: float = 0.0
 var _controls: Dictionary = {}
 var _scale_label: Label
+var suspended: bool = false
+var _title_label: Label
 var _hide_button: Button
 
 func _ready() -> void:
@@ -57,6 +59,7 @@ func _ready() -> void:
 	panel.add_child(column)
 	var title: Label = Label.new()
 	title.text = "汐灵  ·  小汐"
+	_title_label = title
 	title.add_theme_font_size_override("font_size", 22)
 	column.add_child(title)
 	status = Label.new()
@@ -211,6 +214,8 @@ func configure_platform(wayland: bool, tray_available: bool = false) -> void:
 	_topmost_toggle.disabled = wayland
 	if wayland: _topmost_toggle.text = "置顶由桌面环境决定"
 	_hide_button.text = "隐藏" if tray_available else "隐藏10秒"
+	_hide_button.disabled = wayland
+	if wayland: _hide_button.tooltip_text = "Wayland 请使用系统窗口控制，或通过 XWayland 运行。"
 
 func say(message: String, duration: float = 3.0) -> void:
 	hint.text = message
@@ -218,8 +223,11 @@ func say(message: String, duration: float = 3.0) -> void:
 
 func _process(delta: float) -> void:
 	_hint_time = maxf(0.0, _hint_time - delta)
-	hint.visible = _hint_time > 0.0 and not is_open()
+	hint.visible = _hint_time > 0.0 and not is_open() and not suspended
 
 func set_skin_mode(mode: StringName) -> void:
 	var modes: Array[StringName] = [&"native", &"original", &"custom"]
 	skin_selector.select(maxi(0, modes.find(mode)))
+
+func set_character_name(value: String) -> void:
+	_title_label.text = "汐灵  ·  " + value

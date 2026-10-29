@@ -65,6 +65,13 @@ func _run() -> void:
 	check(pet.brain.action == &"drag", "Drag pose")
 	pet.brain.set_dragging(false)
 	check(pet.brain.action != &"drag", "Drag release")
+	pet.runtime.settings.set_value("character", "ocean_demo")
+	check(pet.runtime.profile.display_name == "海风演示" and pet.skin.mode == &"native", "character resource changes name and optional visual sources")
+	check(pet.menu._title_label.text.contains("海风演示"), "configured character name reaches UI")
+	pet.controls.hide_pet()
+	check(pet.controls.hidden and not main.visible and pet.desktop.suppressed, "hiding suppresses drawing instead of unsupported main-window hide")
+	pet.controls.show_pet()
+	check(not pet.controls.hidden and main.visible and not pet.desktop.suppressed, "show restores drawing and input")
 	main.queue_free()
 	await process_frame
 	print("Scene smoke: %d checks, %d failures" % [checks, failures])
