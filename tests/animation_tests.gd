@@ -82,14 +82,21 @@ func _initialize() -> void:
 		walking_animator.setup(original_sprite, drawing, original)
 		walking_animator.walk_distance = 27.0
 		walking_animator.apply(walking_brain)
-		check(original_sprite.animation == &"walk" and original_sprite.frame == 3, "walk frame follows distance traveled")
+		check(walking_animator.rig.visible and is_equal_approx(walking_animator.rig.phase,27.0/72.58), "continuous walking joints follow distance traveled")
+		var stopped_phase: float = walking_animator.rig.phase
 		walking_animator.walk_paused = true
 		walking_animator.walk_distance = 54.0
 		walking_animator.apply(walking_brain)
-		check(original_sprite.animation == &"walk" and original_sprite.frame == 3, "paused displacement freezes the same pose instead of swapping hit silhouettes")
+		check(walking_animator.rig.phase == stopped_phase and walking_animator.rig.amount == 0.0, "paused walking stops its phase and settles to the neutral original pose")
 		walking_animator.walk_direction = -1
 		walking_animator.apply(walking_brain)
 		check(original_sprite.scale.x < 0, "leftward walking mirrors both picture and coordinate transform")
+		walking_animator.walk_paused = false
+		walking_animator.tick(0.1,walking_brain)
+		walking_brain.tick(0.5)
+		walking_brain.interact(&"jump")
+		walking_animator.tick(0.016,walking_brain)
+		check(original_sprite.animation==&"jump" and original_sprite.frame==0 and not walking_animator.rig.visible,"player jump interrupts walking at its first picture instead of losing the opening frames")
 		original_sprite.free()
 	print("Animation tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)

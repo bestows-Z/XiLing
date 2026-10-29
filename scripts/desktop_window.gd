@@ -91,9 +91,11 @@ func step_roam(delta: float, direction: float) -> float:
 		var limits: Rect2 = Rect2(Vector2(area.position), Vector2(maxi(0, area.size.x - window.size.x), maxi(0, area.size.y - window.size.y)))
 		locomotion.begin(Vector2(window.position), limits, direction)
 	var before: Vector2i = window.position
+	var before_distance: float = locomotion.distance
 	var target: Vector2i = locomotion.advance(delta)
 	if target != before: window.position = target
-	return absf(float(window.position.x - before.x))
+	# 步态使用连续路径；OS窗口的整数/Retina取整由画面内的小数偏移补偿。
+	return locomotion.distance-before_distance
 
 func stop_roam() -> void:
 	locomotion.stop()

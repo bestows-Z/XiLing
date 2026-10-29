@@ -9,6 +9,7 @@ var hit_image: Image
 var outline: PackedVector2Array = PackedVector2Array()
 var _texture_id: int = 0
 var frame_offset: Vector2 = Vector2.ZERO
+var _hit_cache: Dictionary = {}
 var original_path: String = "res://assets/pet/xiaoxi.png"
 var blink_path: String = "res://assets/pet/xiaoxi_blink.png"
 var custom_path: String = CUSTOM_PATH
@@ -28,6 +29,7 @@ func load_custom() -> bool:
 	if not candidate.has_animation(&"idle") or candidate.get_frame_count(&"idle") == 0:
 		return false
 	frames = candidate
+	_hit_cache.clear()
 	_texture_id = 0
 	return true
 
@@ -39,6 +41,7 @@ func load_original() -> bool:
 	if open_image == null or open_image.is_empty():
 		return false
 	frames = SpriteFrames.new()
+	_hit_cache.clear()
 	frames.remove_animation(&"default")
 	frames.add_animation(&"idle")
 	frames.add_frame(&"idle", ImageTexture.create_from_image(open_image))
@@ -48,6 +51,11 @@ func load_original() -> bool:
 			frames.add_frame(&"idle", ImageTexture.create_from_image(blink_image))
 	if original_path == "res://assets/pet/xiaoxi.png": XiaoxiAnimations.append_to(frames)
 	mode = &"original"
+	# 首次眨眼/动作不再同步计算大图透明轮廓；启动时一次准备好。
+	for name: StringName in frames.get_animation_names():
+		for index: int in range(frames.get_frame_count(name)):
+			var texture: Texture2D = frames.get_frame_texture(name,index)
+			if texture != null: _cache_hit(texture)
 	_texture_id = 0
 	return true
 
@@ -91,8 +99,16 @@ func apply(sprite: AnimatedSprite2D, action: StringName, progress: float, blinki
 	sprite.scale = Vector2.ONE * fit
 	if texture.get_instance_id() != _texture_id:
 		_texture_id = texture.get_instance_id()
-		hit_image = texture.get_image()
-		_build_outline()
+		_cache_hit(texture)
+		hit_image = _hit_cache[_texture_id]["image"]
+		outline = _hit_cache[_texture_id]["outline"]
+
+func _cache_hit(texture: Texture2D) -> void:
+	var id: int = texture.get_instance_id()
+	if _hit_cache.has(id): return
+	hit_image = texture.get_image()
+	_build_outline()
+	_hit_cache[id] = {"image":hit_image,"outline":outline}
 
 func hit_test(point: Vector2) -> bool:
 	if hit_image == null:

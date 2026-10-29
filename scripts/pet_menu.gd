@@ -48,12 +48,19 @@ func _ready() -> void:
 	var theme: Theme = Theme.new()
 	theme.default_font = UI_FONT
 	theme.default_font_size = 18
-	for type_name: StringName in [&"Label", &"Button", &"CheckButton", &"OptionButton"]:
-		for color_name: StringName in [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_selected_color"]:
+	for type_name: StringName in [&"Label", &"Button", &"CheckButton", &"OptionButton", &"PopupMenu"]:
+		for color_name: StringName in [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_hover_pressed_color", &"font_focus_color", &"font_selected_color"]:
 			theme.set_color(color_name, type_name, Color("25465f"))
-	for type_name: StringName in [&"Button", &"OptionButton"]:
-		for state: StringName in [&"normal", &"hover", &"pressed", &"focus"]:
+		theme.set_color("font_disabled_color",type_name,Color("63798b"))
+	for type_name: StringName in [&"Button", &"OptionButton", &"CheckButton"]:
+		for state: StringName in [&"normal", &"hover", &"pressed", &"hover_pressed", &"disabled"]:
 			theme.set_stylebox(state, type_name, _style("dceefb" if state == &"normal" else "bdddf2", 10, 10))
+		var focus: StyleBoxFlat = _style("00000000",0,10)
+		focus.border_color = Color("397eaa")
+		focus.set_border_width_all(2)
+		theme.set_stylebox("focus",type_name,focus)
+	theme.set_stylebox("panel","PopupMenu",_style("f1f7fc",8,8))
+	theme.set_stylebox("hover","PopupMenu",_style("bdddf2",4,5))
 	panel.theme = theme
 	var column: VBoxContainer = VBoxContainer.new()
 	column.add_theme_constant_override("separation", 8)
@@ -84,6 +91,7 @@ func _ready() -> void:
 	for label: String in ["活动节奏：自然 · 25–45秒", "活动节奏：安静 · 35–65秒", "活动节奏：活泼 · 15–25秒"]: rate.add_item(label)
 	rate.item_selected.connect(func(index: int) -> void: setting_changed.emit("activity_rate", ["natural", "quiet", "lively"][index]))
 	_controls["activity_rate"] = rate
+	rate.get_popup().theme = theme
 	list.add_child(rate)
 	_heading(list, "外观与窗口")
 	_scale_label = Label.new()
@@ -104,11 +112,13 @@ func _ready() -> void:
 	for value: int in [24, 30, 60, 120]: fps.add_item("最大帧率：%d" % value, value)
 	fps.item_selected.connect(func(index: int) -> void: setting_changed.emit("max_fps", fps.get_item_id(index)))
 	_controls["max_fps"] = fps
+	fps.get_popup().theme = theme
 	list.add_child(fps)
 	skin_selector = OptionButton.new()
 	skin_selector.custom_minimum_size.y = 46
 	skin_selector.add_item("小汐 · 原画与动作帧")
 	skin_selector.add_item("自定义本地动画")
+	skin_selector.get_popup().theme = theme
 	skin_selector.item_selected.connect(func(index: int) -> void: skin_requested.emit(&"original" if index == 0 else &"custom"))
 	list.add_child(skin_selector)
 	_heading(list, "陪她玩一会儿")

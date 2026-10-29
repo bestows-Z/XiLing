@@ -33,7 +33,6 @@ func _ready() -> void:
 	test_mode = OS.get_cmdline_user_args().has("--test-mode") or DisplayServer.get_name() == "headless"
 	runtime.load_state(test_mode)
 	skin.configure(runtime.profile)
-	skin.load_original()
 	visual = Visual.new()
 	add_child(visual)
 	animator.setup(self, visual, skin, runtime.profile)
@@ -99,10 +98,12 @@ func _update_roaming(step: float) -> void:
 	animator.walk_paused = not allowed
 	if allowed:
 		animator.walk_distance += desktop.step_roam(step, brain.roam_direction) / float(runtime.settings.values["scale"])
+		animator.window_offset = Vector2(desktop.locomotion.position.x-get_window().position.x,0)/float(runtime.settings.values["scale"])
 		brain.roam_direction = desktop.locomotion.direction
 		animator.walk_direction = desktop.locomotion.direction
 	else:
 		desktop.stop_roam()
+		animator.window_offset = Vector2.ZERO
 
 func _update_visual() -> void:
 	animator.apply(brain)
@@ -111,6 +112,7 @@ func _window_outline() -> PackedVector2Array:
 	var points: PackedVector2Array = PackedVector2Array()
 	points.append_array(animator.transition.outline)
 	var local_outline: PackedVector2Array = visual.get_outline() if skin.mode == &"native" else skin.outline
+	if animator.rig != null and animator.rig.visible: local_outline = animator.rig.get_outline(local_outline)
 	for point: Vector2 in local_outline:
 		points.append(get_global_transform_with_canvas() * point)
 	if effects != null:
@@ -125,6 +127,7 @@ func _window_outline() -> PackedVector2Array:
 
 func is_mouse_on_pet(viewport_point: Vector2 = Vector2.INF) -> bool:
 	var point: Vector2 = to_local(get_global_mouse_position()) if viewport_point == Vector2.INF else get_global_transform_with_canvas().affine_inverse() * viewport_point
+	if animator.rig != null and animator.rig.visible: return animator.rig.hit_test(point)
 	return visual.hit_test(point) if skin.mode == &"native" else skin.hit_test(point)
 
 func _unhandled_input(event: InputEvent) -> void:
