@@ -1,9 +1,9 @@
 <p align="center"><img src="assets/icons/xiling.svg" width="90" alt="汐灵原创海浪图标"></p>
 <h1 align="center">汐灵 XiLing</h1>
 <p align="center"><strong>把一点海风，留在你的桌面。</strong></p>
-<p align="center">免费开源的 Godot 2D 桌宠 · 小汐 · 本地行为与情绪 · 可替换角色动画</p>
+<p align="center">Godot 2D 桌宠 · 小汐 · 原画与动作帧 · 自主生活与情绪</p>
 <p align="center">
-  <a href="https://github.com/bestows-Z/XiLing/releases"><img src="https://img.shields.io/badge/Release-候选构建阶段-168aad" alt="当前没有稳定安装包"></a>
+  <a href="https://github.com/bestows-Z/XiLing/releases"><img src="https://img.shields.io/badge/Release-候选构建阶段-168aad" alt="候选构建阶段"></a>
   <img src="https://img.shields.io/badge/Source-0.3.0--dev-478cbf" alt="源码开发版本">
   <a href="https://github.com/bestows-Z/XiLing/actions/workflows/checks.yml"><img src="https://github.com/bestows-Z/XiLing/actions/workflows/checks.yml/badge.svg" alt="Godot检查"></a>
   <a href="https://github.com/bestows-Z/XiLing/stargazers"><img src="https://img.shields.io/github/stars/bestows-Z/XiLing?color=f4b942" alt="Stars"></a>
@@ -11,42 +11,43 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-4f86c6" alt="MIT"></a>
   <img src="https://img.shields.io/badge/Targets-Windows%20%7C%20macOS%20%7C%20Linux-7c8a97" alt="目标平台，不代表全部验收">
 </p>
-<p align="center"><a href="#开始陪伴">开始陪伴</a> · <a href="#操作与玩法">操作与玩法</a> · <a href="#平台状态">平台状态</a> · <a href="CONTRIBUTING.md">参与贡献</a> · <a href="https://github.com/bestows-Z/XiLing/issues">反馈问题</a></p>
+<p align="center"><a href="#开始陪伴">开始陪伴</a> · <a href="#操作">操作</a> · <a href="#平台状态">平台状态</a> · <a href="CONTRIBUTING.md">参与贡献</a></p>
 
-小汐是非官方原创海洋主题角色。汐灵使用 Godot 4.7.2 与 GDScript，实现透明桌面窗口、本地行为评分、情绪与互动，不包含聊天、LLM、语音或联网 Agent，也不使用 Flutter。
+小汐是非官方原创海洋主题角色。打开项目就会显示仓库内的原始人物，不需要额外找图。原始睁眼、眨眼 PNG 保留不变；挥手、跳跃、摸摸、进食、睡觉、好奇、行走和跳舞使用新增的真实姿态图片。
 
-**本机有原始 `assets/pet/xiaoxi.png` 时默认显示你的鲸鱼娘立绘。** 原画保留眨眼、呼吸、漂浮和整体互动反馈，不会自动变成有肢体动画的人物。精绘立绘的抬手、弯腿仍需要对应动画素材。开源仓库不发布原始 AI PNG；缺少它们时启动可交互的程序绘制兼容演示角色。
+她会自己观察、散步、玩耍和休息。当前行为由本地需求评分、性格、时间、近期经历和连续活动计划决定；“想法”是这些决策的文字表达。**这是可解释的游戏行为系统，不是 LLM，也不具有人类意识。** 无账号、密钥、聊天、联网 Agent 或 Flutter 依赖。
 
-## 能玩到什么
+## 实际运行预览
+
+<p align="center">
+  <img src="assets/screenshots/original.png" width="225" alt="原始小汐待机，Godot实际运行截图">
+  <img src="assets/screenshots/jump.png" width="225" alt="实际使用弯膝与腾空姿态帧的跳跃">
+</p>
+<p align="center"><img src="assets/screenshots/settings.png" width="360" alt="独立的窄长设置窗口，支持高分屏字体缩放"></p>
+
+截图来自 macOS 上的 Godot 实际渲染。设置使用独立窄长窗口和 20 号文字，Retina 屏幕自动补偿显示比例；缩小人物不会把设置一起缩小。设置行可滚动，底部始终保留返回、隐藏、退出。
+
+## 她会做什么
 
 | 系统 | 已实现内容 |
 | --- | --- |
-| 桌面窗口 | 透明、无边框、置顶开关、拖动、屏幕边界恢复、窗口位置记忆和 60%–150% 缩放 |
-| 互动 | 单击、双击、右键菜单、鼠标来回抚摸、连续点击惊讶、拖动反馈、喂食 |
-| 趣味玩法 | 20 秒泡泡小游戏：点击得分、自动补充目标、到时结束，也可随时主动退出；爱心反馈 |
-| 行为 | 按精力、心情、无聊、好奇心、性格和时间段评分；动作历史/冷却避免重复；长时间无人互动时降低频率 |
-| 情绪 | 心情、精力、无聊、亲密度与好奇心均限制在 0–100；不累计离线惩罚，亲密度不因离开而下降 |
-| 设置 | 缩放、置顶、动画播放、最大帧率、自主活动、主动提示、夜间安静、角色配置及恢复默认 |
-| 存档 | 保存设置、位置、情绪和互动计数；原子替换、有效备份、损坏回退；保存失败可继续运行 |
-| 控制入口 | macOS/Windows 状态图标菜单；窗口内菜单常驻退出入口；不支持托盘时只能隐藏 10 秒，随后自动显示 |
-| 角色接口 | `Resource` 配置角色名称、可选图片/动画路径、表情映射、性格、动画参数；提供两个可加载示例，尚非插件系统 |
+| 原画与动画 | 默认使用原始待机和眨眼 PNG；新增 12 张动作关键姿态，通过图集切换播放。跳跃包含下蹲、腾空与落地，挥手和跳舞有不同肢体姿态 |
+| 自主生活 | 根据精力、心情、无聊、好奇心、性格和时间选择目标；观察→散步→张望、打哈欠→坐下→睡眠→苏醒、跳跃→开心等连续活动 |
+| 主动移动 | 散步时在桌面短距离移动，遇到屏幕边界停止；鼠标停在角色上、设置打开、拖动或泡泡游戏期间停止移动。可单独关闭，Wayland 禁用 |
+| 情绪与想法 | 心情、精力、无聊、亲密度、好奇心均为 0–100；清醒消耗精力、休息恢复；显示当前目标的原因。无离线惩罚，不因离开扣亲密度 |
+| 互动 | 轻点摸摸、双击挥手、连续点击惊讶、来回移动鼠标抚摸、喂食、拖动、右键设置；爱心和文字反馈 |
+| 泡泡游戏 | 20 秒、六个目标，点击计分并补充目标，可提前结束；游戏期间桌宠不会自主移动目标区域 |
+| 桌面窗口 | 透明、无边框、置顶开关、拖动、屏幕边界恢复、位置记忆、60%–150% 人物大小 |
+| 设置与保存 | 独立长条设置、帧率、自主生活、散步、主动提示、夜间安静；保存设置/情绪/统计/位置，原子替换及损坏备份恢复 |
+| 控制入口 | macOS / Windows 状态图标菜单；无托盘时只隐藏 10 秒并自动恢复；Wayland 使用系统窗口控制 |
 
-### 动画的实际范围
+新增图片是同角色的 AI 辅助关键姿态，尚不是高帧率逐帧动画或精细骨骼绑定。部分状态复用已有姿态，例如开心/害羞复用抚摸表情、坐下复用下蹲、打哈欠使用原始闭眼帧；没有独立的生气、背面转身美术。不会把状态数量当作独立精绘动作数量。
 
-独立的 `PetAnimationController` 支持三种表现来源：本地原画两帧、Godot 绘制的关节演示、用户有权使用的 `SpriteFrames`。多帧皮肤按相对帧时长、循环设置和行为时长播放。
-
-兼容演示实现 22 类姿态状态：待机、挥手、跳跃、跳舞、睡眠、好奇、拖动、进食、抚摸、张望、开心、生气表情、惊讶、害羞、下蹲、起跳、落地、原地行走、转身示意、坐下、打哈欠、苏醒；另外保留随机眨眼和独立呼吸。抬臂、肘与膝盖的位置会独立变化。转身目前是正面身体朝向示意，没有背面精绘素材。
-
-这些动作**不等于原始鲸鱼娘已拥有精绘肢体动画**。原画模式下的行为仍会改变内部情绪、显示文字并产生玩法/互动反馈，肢体姿态需通过合法动画皮肤补齐。兼容演示用于验证动作和接口，不替代精致人物美术。
-
-## 真实界面预览
-
-<p align="center"><img src="assets/screenshots/settings.png" width="300" alt="Godot实际运行的设置界面"></p>
-<p align="center"><sub>本机 Godot GPU 实际渲染的设置界面；截图不包含仅限本地保留的原始人物图片。</sub></p>
+程序绘制的 22 状态关节演示保留作开发和图片缺失时的容错，不在正常设置中提供该角色入口。旧版默认演示皮肤会迁回原画。角色资源和自定义 `SpriteFrames` 接口仍可替换表现来源。
 
 ## 开始陪伴
 
-当前以源码和候选构建为主，没有已验收的稳定安装包。可以[下载源码 ZIP](https://github.com/bestows-Z/XiLing/archive/refs/heads/main.zip)，或：
+当前提供源码及未签名候选构建，没有验收完毕的稳定安装包。安装 [Godot 4.7.2 标准版](https://godotengine.org/download/)，导入 `project.godot`，按 **F5** 运行。无需 .NET。
 
 ```bash
 git clone https://github.com/bestows-Z/XiLing.git
@@ -54,84 +55,72 @@ cd XiLing
 godot --path .
 ```
 
-安装 [Godot 4.7.2 标准版](https://godotengine.org/download/)，在项目管理器导入 `project.godot`，按 **F5** 运行即可。无需 .NET。macOS 若没有命令行别名，可运行：
+macOS 没有命令行别名时可使用：
 
 ```bash
 /Applications/Godot.app/Contents/MacOS/Godot --path .
 ```
 
-使用本地原画时，将你有权使用的睁眼和闭眼图片分别放在 `assets/pet/xiaoxi.png`、`assets/pet/xiaoxi_blink.png`；这些文件不会提交仓库，也不会被公开导出预设打包。无需这些图片也能启动。
+原始人物、眨眼图和新增动作图集均已纳入仓库及公开导出预设。无需额外复制图片。素材来源与许可见 [人物素材说明](assets/pet/NOTICE.txt)。私有替换素材放在被忽略的 `assets/local/`，不要覆盖内置原图。
 
-## 操作与玩法
+## 操作
 
 | 操作 | 效果 |
 | --- | --- |
-| 左键轻点角色 | 短暂等待双击判定后摸摸 |
-| 双击角色 | 挥手反馈 |
-| 左键按住并移动 | 拖动窗口，优先于其他动作 |
-| 在角色上来回移动鼠标 | 达到抚摸距离和换向阈值后摸摸，有冷却 |
-| 连续快速点击 | 惊讶反馈，不扣亲密度 |
-| 右键 / `M` | 互动与设置菜单 |
-| `Space` | 跳跃；原画为整体反馈，演示/合法多帧皮肤可有真实关节动作 |
-| `F` / `D` / `S` | 投喂 / 跳舞 / 睡或醒 |
-| `B` | 开始或结束 20 秒泡泡游戏，左键点泡泡得分 |
-| `A` | 开关自主行为 |
-| `Esc` | 优先结束玩法，其次关闭菜单；无玩法/菜单时打开控制入口 |
+| 左键轻点人物 | 等待双击判定后摸摸，有动作图、爱心与文字反馈 |
+| 双击人物 | 挥手 |
+| 左键按住并移动 | 超过移动阈值后拖动窗口；轻点不会启动拖动 |
+| 在人物上来回移动鼠标 | 满足距离/换向阈值后抚摸，有冷却 |
+| 快速连续点击 | 惊讶反馈，不扣亲密度 |
+| 右键 / `M` | 打开独立互动与设置窗口 |
+| `Space` | 跳跃动作帧 |
+| `F` / `D` / `S` | 喂食 / 跳舞 / 睡或醒 |
+| `B` | 开始或结束泡泡游戏 |
+| `A` | 开关自主生活 |
+| `Esc` | 结束玩法 / 关闭设置；无玩法或设置时打开控制入口 |
 | `H` | 操作提示 |
 
-快捷键需要桌宠窗口获得焦点。macOS 菜单栏或 Windows 状态图标提供显示、隐藏、设置及退出；X11 等无可用状态图标时，隐藏按钮会明确显示“隐藏10秒”。Wayland 禁用该按钮，请使用系统窗口控制或 XWayland。没有音效，因此没有无效音量控件。
+快捷键需要桌宠获得焦点。没有音效，因此没有无效音量控件。
 
 ## 平台状态
 
-| 环境 | 实际状态 |
+| 环境 | 实际状态与限制 |
 | --- | --- |
-| macOS Apple Silicon | Godot 4.7.2 导入、解析、核心测试和 GPU 界面渲染通过；原生 API 确认透明、无边框、置顶标志、状态图标矩形、越界恢复、125% 缩放及无托盘隐藏/自动恢复。完整真实鼠标/下层应用穿透验收仍需补齐 |
-| macOS Intel | 共享源码；未实机运行。未签名、未公证，不能当作已获苹果认证 |
-| Windows x64 | 已在 macOS 使用官方 Windows 模板导出候选程序；未在 Windows 运行，不代表透明、拖动、托盘或穿透已通过 |
-| Linux X11 x64 | 目标平台；尚无本地 Linux 桌面实机结果，合成器与显卡驱动会影响透明窗口 |
-| Linux Wayland | 已知降级：程序定位、置顶与轮廓穿透不能保证；使用支持的原生拖动入口。隐藏按钮禁用，使用系统窗口控制或 XWayland |
+| macOS Apple Silicon | Godot 4.7.2 导入、解析、回归测试和 GPU 运行通过；实测原画/动作/独立设置渲染、Retina 两倍缩放补偿、人物缩小后设置尺寸不变、自主移动、越界恢复、隐藏及自动恢复。下层应用逐区域穿透与多显示器组合尚未完整验收 |
+| macOS Intel | universal 导出候选可构建；未实机运行，未签名、未公证 |
+| Windows x64 | 官方模板导出候选可构建；未在 Windows 实机验收透明、拖动、托盘或穿透 |
+| Linux X11 x64 | Ubuntu CI 可导入、测试和导出；未在 Linux 桌面实机验收透明/穿透，受合成器与显卡驱动影响；当前没有 Linux 托盘实现 |
+| Linux Wayland | 定位、置顶、轮廓穿透不保证；自主移动和隐藏按钮禁用。原生拖动按支持情况使用，建议尝试 XWayland |
 
-Wayland 用户可在提供 XWayland 的环境尝试：
+提供 XWayland 的环境可尝试：
 
 ```bash
 godot --display-driver x11 --path .
 ```
 
-API 支持边界参考 [Godot DisplayServer](https://docs.godotengine.org/en/stable/classes/class_displayserver.html)、[Window](https://docs.godotengine.org/en/stable/classes/class_window.html) 与 [StatusIndicator](https://docs.godotengine.org/en/stable/classes/class_statusindicator.html) 官方文档；Linux 状态图标当前没有实现。源码逻辑的坐标/缩放测试不等于跨 DPI 多显示器设备验收，该项仍未覆盖真实多显示器组合。
+平台 API 支持边界参考 Godot 官方 [DisplayServer](https://docs.godotengine.org/en/stable/classes/class_displayserver.html)、[Window](https://docs.godotengine.org/en/stable/classes/class_window.html)、[StatusIndicator](https://docs.godotengine.org/en/stable/classes/class_statusindicator.html)。构建成功不等于桌面交互验收通过。
 
-### 鼠标穿透边界
-
-图片模式使用当前帧 Alpha 命中和 BitMap 轮廓；演示角色使用绘制几何命中。隐藏采用停止绘制并设置窗外输入区域，不调用 Godot 主窗口不支持的 `hide()`；无托盘时 10 秒后恢复已在本机实际等待验证。系统只接收一个外包轮廓，因此肢体、发丝间的少量透明空隙仍可能拦截鼠标。提示与泡泡会扩大输入轮廓，菜单打开及拖动期间整窗接收输入。Windows 会裁掉系统轮廓外的绘制内容，特效目标均纳入轮廓。不是逐像素无限精度的系统穿透。
-
-## 存档与角色资源
-
-状态在 Godot `user://pet_state.cfg`，备份为 `.bak`。保存情绪、互动计数、角色/皮肤选择、设置和窗口坐标；首次运行或损坏且无有效备份时使用默认值。没有账号、密钥或云端同步依赖。
-
-`characters/xiaoxi.tres` 是原画优先配置，`characters/demo.tres` 是不依赖图片的性格示例。核心行为只消费角色性格和动作状态，不直接引用小汐的 PNG 路径。
-
-自定义逐帧皮肤可保存到 `assets/local/skin.tres`，至少有非空 `idle` 动画。可追加与动作状态同名的动画；缺少/空的可选动作回退 `idle`。菜单选择“本地动画皮肤”启用，该目录不提交；也可以在角色资源中指定其他合法素材路径。只有两张睁眼/闭眼图无法补出抬手、弯腿帧。
+图片使用当前帧 Alpha 命中和 BitMap 外轮廓；系统只能接收一个轮廓，所以发丝或肢体间的部分透明空隙仍可能拦截鼠标。泡泡、提示会扩大输入区域；拖动/设置打开期间整窗接收输入。隐藏通过停止绘制与窗外输入区域实现，无托盘时 10 秒恢复；主窗口不调用不受支持的 `hide()`。
 
 ## 开发与测试
 
 ```text
-scenes/main.tscn                  Main → Pet
-characters/*.tres                可配置角色示例
-scripts/pet_idle.gd               场景协调
-scripts/pet_animation_controller.gd  表现播放与眨眼
-scripts/pose_library.gd           22 类演示姿态
-scripts/pet_visual.gd             关节演示绘制与几何命中
-scripts/local_skin.gd             原画/多帧皮肤与 Alpha 命中
-scripts/pet_brain.gd              评分、状态、优先级、冷却
-scripts/pet_mood.gd               情绪数值与互动变化
-scripts/pet_interaction.gd        点击/抚摸手势
-scripts/pet_effects.gd            泡泡玩法和爱心
-scripts/desktop_window.gd        窗口、拖动、边界、穿透
-scripts/desktop_controls.gd      托盘与显示/隐藏恢复
-scripts/pet_settings.gd          设置校验
-scripts/pet_runtime.gd           角色、统计及状态组合
-scripts/save_manager.gd          存档、备份与损坏恢复
-tests/                           可重复运行的测试
-tools/                           检查入口与仓库审计
+scenes/main.tscn                 Main → Pet
+characters/*.tres               角色名称、素材和性格配置
+scripts/pet_idle.gd              场景协调与输入连接
+scripts/pet_brain.gd             需求评分、目标和活动计划
+scripts/pet_mood.gd              情绪与精力
+scripts/xiaoxi_animations.gd     原画动作图集与关键帧编排
+scripts/pet_animation_controller.gd  动作播放、眨眼与漂浮
+scripts/local_skin.gd            资源加载、Alpha 命中和轮廓
+scripts/pet_menu.gd              独立长条设置与提示
+scripts/desktop_*.gd             窗口、散步、托盘和隐藏
+scripts/pet_interaction.gd       手势判断
+scripts/pet_effects.gd           泡泡与爱心
+scripts/pet_runtime.gd           设置、统计与角色组合
+scripts/save_manager.gd          原子存储和备份恢复
+tests/                          可重复运行的测试
+tools/                          检查入口与仓库审计
 ```
 
 ```bash
@@ -139,29 +128,20 @@ python3 tools/check.py
 python3 tools/repository_check.py
 ```
 
-也可手动运行 Godot `--headless --path . --editor --quit`，再逐个运行 `--script tests/*_tests.gd`。统一检查会检查错误输出，避免引擎退出码为零却漏掉解析/运行错误。
+2026-10-29 本机 Godot 4.7.2 实测：动画 25 项、行为 31 项、皮肤 21 项、场景 38 项、设置/存储/互动/玩法 30 项，以及 22×21 组关节演示姿态检查通过。还从空目录加载实际导出资源包，验证默认原画和图集存在，防止只在本机源目录正常。
 
-2026-10-29 本机实测：动画控制 7 项、行为 26 项、本机皮肤 21 项 / 干净仓库 23 项、本机场景 34 项 / 干净仓库 33 项、设置/存储/互动/玩法 30 项，以及 22 × 21 组姿态检查通过。Headless 无法证明桌面鼠标穿透、系统拖动和不同操作系统 UI 兼容，范围以上表为准。
+存档在 Godot `user://pet_state.cfg`，备份 `.bak`，不依赖账号或云端。自定义 `assets/local/skin.tres` 至少需要非空 `idle`，可增加同名行为动画，缺少动作时回退待机。私有素材不自动提交。
 
 ## 候选构建与发布
 
-- `Godot checks` 在推送/PR 时验证干净源码的导入、解析、测试及提交文件边界。
-- `Candidate builds` 手动执行，使用官方 Godot 4.7.2 引擎和模板，导出 Windows x64、Linux x64、macOS universal 未签名候选产物，附 `SHA256SUMS.txt`。
-- 默认只保存 Actions artifact。只有维护者明确填写 `v0.3.0-rc.N` 才创建 **prerelease**；不自动发布稳定版。CI 导出成功也不等于该平台桌面验收通过。
-- 本机只安装了 Windows 模板；Linux/macOS 候选依赖 CI 的官方模板下载。工作流首次结果应查看 [Actions](https://github.com/bestows-Z/XiLing/actions)，不要把“已配置”误认为“已成功运行”。
+[Godot checks](https://github.com/bestows-Z/XiLing/actions/workflows/checks.yml) 在推送/PR 时检查干净源码。[Candidate builds](https://github.com/bestows-Z/XiLing/actions/workflows/candidates.yml) 手动执行，用官方 4.7.2 引擎与模板导出 Windows x64、Linux x64、macOS universal，附 `SHA256SUMS.txt`。
 
-候选没有 Developer ID 签名、苹果公证或 Windows 代码签名。请核对来源与 SHA256，遵循系统提供的正常安全提示，不通过清除隔离属性绕过来源校验。
+默认只产生 Actions artifact。明确填写 `v0.3.0-rc.N` 才创建预发行版，不自动发布稳定版。候选未经 Windows/Linux 完整桌面验收，没有苹果 Developer ID 签名、公证或 Windows 代码签名。请核对来源与校验值，遵循系统正常安全提示。
 
 ## 素材与许可
 
-汐灵与任何模型厂商、DeepSeek 官方品牌没有关联，不使用官方 Logo 或未经授权的商标素材。
+源码、场景、海浪 SVG、项目文档和已获维护者分发授权的人物美术随项目按 [MIT](LICENSE) 提供。原始人物图片内容未修改，新增动作图集为 AI 辅助生成；详见 [素材说明](assets/pet/NOTICE.txt)。汐灵与 DeepSeek 或其他厂商无关联，不使用官方品牌 Logo。
 
-产品源码、场景、原创海浪 SVG 和正式项目文档使用 [MIT](LICENSE)。内置 Noto Sans SC 字体来自 [Noto CJK](https://github.com/notofonts/noto-cjk)，保留 [SIL OFL 1.1](assets/fonts/OFL.txt) 和[来源说明](assets/fonts/NOTICE.txt)，字体不适用 MIT。
+Noto Sans SC 来自 [Noto CJK](https://github.com/notofonts/noto-cjk)，保留 [SIL OFL 1.1](assets/fonts/OFL.txt) 和[来源说明](assets/fonts/NOTICE.txt)，字体不适用 MIT。提交第三方美术需提供来源和再分发许可。
 
-本地原始 AI PNG 不进入公开仓库，不自动纳入 MIT，也不出现在公开预览截图或导出候选中。新增美术请先确认再分发权利；代码与美术分别管理授权。
-
-## 参与贡献与项目链接
-
-欢迎补充精致且可合法再分发的动作素材、改善体验、修复问题或提供目标系统实测。提交前阅读[贡献指南](CONTRIBUTING.md)，版本变化见[更新记录](CHANGELOG.md)。
-
-[GitHub 源码](https://github.com/bestows-Z/XiLing) · [问题反馈](https://github.com/bestows-Z/XiLing/issues) · [提交 PR](https://github.com/bestows-Z/XiLing/pulls) · [候选与发布](https://github.com/bestows-Z/XiLing/releases)
+[GitHub 源码](https://github.com/bestows-Z/XiLing) · [问题反馈](https://github.com/bestows-Z/XiLing/issues) · [贡献指南](CONTRIBUTING.md) · [更新记录](CHANGELOG.md) · [候选与发布](https://github.com/bestows-Z/XiLing/releases)

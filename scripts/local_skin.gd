@@ -1,5 +1,6 @@
 extends RefCounted
-## Local original artwork is preferred when present; the repository remains usable without it.
+## 原始待机/眨眼 PNG 与动作图集共用透明度命中接口。
+const XiaoxiAnimations = preload("res://scripts/xiaoxi_animations.gd")
 
 const CUSTOM_PATH: String = "res://assets/local/skin.tres"
 var frames: SpriteFrames
@@ -31,7 +32,7 @@ func load_custom() -> bool:
 
 func load_original() -> bool:
 	var open_path: String = original_path
-	if open_path.is_empty() or not FileAccess.file_exists(open_path):
+	if open_path.is_empty() or (not ResourceLoader.exists(open_path) and not FileAccess.file_exists(open_path)):
 		return false
 	var open_image: Image = _read_local_image(open_path)
 	if open_image == null or open_image.is_empty():
@@ -40,10 +41,11 @@ func load_original() -> bool:
 	frames.remove_animation(&"default")
 	frames.add_animation(&"idle")
 	frames.add_frame(&"idle", ImageTexture.create_from_image(open_image))
-	if FileAccess.file_exists(blink_path):
+	if ResourceLoader.exists(blink_path) or FileAccess.file_exists(blink_path):
 		var blink_image: Image = _read_local_image(blink_path)
 		if blink_image != null and not blink_image.is_empty():
 			frames.add_frame(&"idle", ImageTexture.create_from_image(blink_image))
+	if original_path == "res://assets/pet/xiaoxi.png": XiaoxiAnimations.append_to(frames)
 	mode = &"original"
 	_texture_id = 0
 	return true
@@ -65,7 +67,7 @@ func apply(sprite: AnimatedSprite2D, action: StringName, progress: float, blinki
 	if count == 0:
 		return
 	sprite.animation = chosen
-	if mode == &"original":
+	if mode == &"original" and chosen == &"idle":
 		sprite.frame = 1 if blinking and count > 1 else 0
 	else:
 		var remaining: float = clampf(progress, 0.0, 1.0) * total_frame_duration(chosen)
@@ -82,6 +84,7 @@ func apply(sprite: AnimatedSprite2D, action: StringName, progress: float, blinki
 	var fit: float = minf(250.0 / texture.get_width(), 340.0 / texture.get_height())
 	if mode == &"original":
 		fit = minf(280.0 / texture.get_width(), 384.0 / texture.get_height())
+		if texture is AtlasTexture: fit = 320.0 / texture.get_height()
 	sprite.scale = Vector2.ONE * fit
 	if texture.get_instance_id() != _texture_id:
 		_texture_id = texture.get_instance_id()

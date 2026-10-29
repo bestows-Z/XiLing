@@ -24,6 +24,19 @@ func _run() -> void:
 	check(pet.visual.visible == not has_original, "Fallback visual appears only when original art is absent")
 	if has_original:
 		check(pet.sprite_frames != null, "Original artwork is loaded on the local project")
+		var clicks_before: int = pet.runtime.statistics["pets"]
+		pet.brain.autonomous = false
+		var press: InputEventMouseButton = InputEventMouseButton.new()
+		press.button_index = MOUSE_BUTTON_LEFT
+		press.position = Vector2(180, 240)
+		press.pressed = true
+		pet._unhandled_input(press)
+		check(pet._left_pending, "viewport-coordinate click hits the visible original artwork")
+		press.pressed = false
+		pet._unhandled_input(press)
+		pet.interaction.tick(0.5)
+		check(pet.brain.action == &"pet" and pet.runtime.statistics["pets"] == clicks_before + 1, "stationary click reaches feedback without a drag cooldown")
+		pet.brain.reset()
 	else:
 		check(pet.sprite_frames == null, "No hard resource dependency on excluded textures")
 	pet._select_skin(&"native")
@@ -51,7 +64,9 @@ func _run() -> void:
 	check(pet.menu.is_open(), "Menu opens")
 	await process_frame
 	await process_frame
-	check(pet.menu.panel.get_global_rect().end.y <= 480, "Menu fits in the window")
+	check(pet.menu.settings_window.size.y >= 600 and pet.menu.settings_window.size.x >= 440, "Settings use an independent tall readable window")
+	check(pet.menu.panel.theme.default_font_size >= 20, "Settings use readable 20px text")
+	check(pet.menu.hint.get_theme_font_size("font_size") >= 26, "Desktop feedback text is readable on Retina too")
 	pet.menu.close()
 	check(not pet.menu.is_open(), "Menu closes")
 	pet._select_skin(&"original")

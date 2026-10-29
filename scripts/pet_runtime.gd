@@ -14,6 +14,10 @@ func load_state(test_mode: bool) -> void:
 	brain.restore(data)
 	var saved: Variant = data.get("settings", {})
 	settings.restore(saved if saved is Dictionary else {})
+	# 旧版本的演示皮肤不再作为用户的默认人物。
+	if settings.values["skin"] == "native" or settings.values["character"] == "ocean_demo":
+		settings.values["skin"] = "auto"
+		settings.values["character"] = "xiaoxi"
 	if not data.has("settings"):
 		settings.set_value("autonomous", brain.autonomous)
 	position = data.get("window_position")

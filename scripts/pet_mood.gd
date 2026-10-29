@@ -25,6 +25,7 @@ func tick(delta: float, sleeping: bool) -> void:
 		boredom -= step * 0.2
 	else:
 		boredom += step * 0.06
+		energy -= step * 0.025
 	# 兴奋逐渐平复，不会因为没人照看变得不开心。
 	if joy > 65.0:
 		joy = maxf(65.0, joy - step * 0.02)

@@ -78,7 +78,24 @@ func _test_autonomous_decisions() -> void:
 	var tired = Brain.new()
 	tired.mood.energy = 1.0
 	tired.tick(8.0)
-	check(tired.action == &"sleep", "exhausted pet autonomously rests")
+	check(tired.goal == &"rest" and tired.action == &"yawn", "exhausted pet autonomously starts a rest plan")
+	tired.tick(3.0)
+	tired.tick(8.0)
+	check(tired.action == &"sleep", "rest plan reaches sleep without a user click")
+	tired.tick(30.0)
+	check(tired.action == &"wake", "rest plan wakes up by itself")
+	var playful = Brain.new()
+	playful._start_activity(&"jump")
+	var jump_states: Array[StringName] = [playful.action]
+	for seconds: float in [1.2]:
+		playful.tick(seconds)
+		jump_states.append(playful.action)
+	check(jump_states == [&"jump", &"happy"], "autonomous jump plays one full crouch-airborne-land animation before celebrating")
+	check(playful.interact(&"feed") and playful._plan.is_empty(), "player interrupts and clears autonomous plan")
+	var awake = Brain.new()
+	awake.autonomous = false
+	awake.tick(60.0)
+	check(awake.mood.energy < 80.0, "time awake consumes energy without user input")
 	var paused = Brain.new()
 	paused.autonomous = false
 	paused.tick(60.0)

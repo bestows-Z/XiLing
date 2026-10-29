@@ -19,8 +19,8 @@
 /icon.svg
 *.log
 
-# Local-only original AI art and replacement assets
-/assets/pet/
+# User approved publishing the original XiLing art and its action sheets.
+# Private replacement assets remain local.
 /assets/local/
 /local/
 

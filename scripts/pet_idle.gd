@@ -83,6 +83,8 @@ func _process(delta: float) -> void:
 		elif not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			_release_drag()
 	animator.tick(step * runtime.profile.animation_speed, brain)
+	if brain.action == &"walk" and brain.is_autonomous_activity() and runtime.settings.values["roaming"] and not menu.is_open() and not effects.playing and not controls.hidden and not is_mouse_on_pet():
+		desktop.step_roam(step, brain.roam_direction)
 	desktop.update_outline(_window_outline(), step, menu.is_open())
 	_save_timer += step
 	if _save_timer >= 10.0:
@@ -108,8 +110,8 @@ func _window_outline() -> PackedVector2Array:
 	var final: Transform2D = get_viewport().get_final_transform()
 	return final * points
 
-func is_mouse_on_pet() -> bool:
-	var point: Vector2 = to_local(get_global_mouse_position())
+func is_mouse_on_pet(viewport_point: Vector2 = Vector2.INF) -> bool:
+	var point: Vector2 = to_local(get_global_mouse_position()) if viewport_point == Vector2.INF else get_global_transform_with_canvas().affine_inverse() * viewport_point
 	return visual.hit_test(point) if skin.mode == &"native" else skin.hit_test(point)
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -129,7 +131,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		interaction.cancel()
 		get_viewport().set_input_as_handled()
 		return
-	if not is_mouse_on_pet(): return
+	if not is_mouse_on_pet(event.position): return
 	match event.button_index:
 		MOUSE_BUTTON_LEFT:
 			_left_pending = true
@@ -164,7 +166,7 @@ func _release_drag() -> void:
 	var moved: bool = desktop.end_drag() or _was_dragging
 	_left_pending = false
 	_was_dragging = false
-	brain.set_dragging(false)
+	if moved: brain.set_dragging(false)
 	if not moved: _queue_click(_double_click)
 	_double_click = false
 	_save_state()
@@ -205,7 +207,11 @@ func trigger_reaction() -> void:
 	_interact(&"jump")
 
 func _on_action_changed(action: StringName) -> void:
+	menu.refresh(brain.snapshot())
 	if not brain.proactive and brain.since_interaction > 1.0: return
+	if brain.is_autonomous_activity() and action != &"idle":
+		menu.say(brain.thought, 5.0)
+		return
 	var words: Dictionary = {&"wave": ["嗨，今天也一起加油！", "海风给你捎来一声问好～"], &"jump": "嘿咻！", &"dance": "跟着海浪摇一摇～", &"sleep": "我眯一会儿……", &"wake": "睡醒啦～", &"curious": "在忙什么呀？", &"feed": ["谢谢，能量补充中！", "啊呜，收到小点心啦～"], &"pet": ["嘿嘿，好舒服～", "再摸摸头嘛～", "小汐收到你的关心啦！"], &"drag": "一起搬个家～", &"surprised": "哇，好多小点点！"}
 	if words.has(action):
 		var value: Variant = words[action]

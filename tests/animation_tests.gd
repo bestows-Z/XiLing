@@ -51,5 +51,16 @@ func _initialize() -> void:
 	animation.apply(brain)
 	check(visual.visible and sprite.sprite_frames == null, "native fallback has no texture dependency")
 	sprite.free()
+	var original = Adapter.new()
+	if original.load_original():
+		var original_sprite: AnimatedSprite2D = AnimatedSprite2D.new()
+		original.apply(original_sprite, &"idle", 0.0, false)
+		check(original_sprite.sprite_frames.get_frame_texture(&"idle", 0).get_width() == 1024, "default idle retains the user's original image")
+		for action: StringName in [&"wave", &"jump", &"pet", &"feed", &"curious", &"wake", &"walk", &"dance"]:
+			check(original.frames.has_animation(action) and original.frames.get_frame_count(action) >= 2, "%s has actual picture frames" % action)
+			original.apply(original_sprite, action, 0.25, false)
+			check(original_sprite.animation == action and original_sprite.sprite_frames.get_frame_texture(action, original_sprite.frame) is AtlasTexture, "%s displays a real action pose" % action)
+		check(original.frames.get_frame_texture(&"sleep", 0) is AtlasTexture, "sleep shows its actual sleeping drawing")
+		original_sprite.free()
 	print("Animation tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)

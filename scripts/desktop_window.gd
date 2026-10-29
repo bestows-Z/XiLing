@@ -12,6 +12,7 @@ var _press_mouse: Vector2i
 var _press_window: Vector2i
 var _outline_timer: float = 0.0
 var _local_travel: Vector2 = Vector2.ZERO
+var _roam_fraction: float = 0.0
 
 func setup(target: Window, test_mode: bool = false) -> void:
 	window = target
@@ -46,7 +47,8 @@ func update_drag() -> bool:
 	if wayland:
 		return moved
 	var distance: Vector2i = DisplayServer.mouse_get_position() - _press_mouse
-	if not moved and Vector2(distance).length() < 5.0:
+	# 只把按下之后收到的实际移动事件作为拖动手势；全局坐标可受 DPI/光标跳转影响。
+	if not moved and _local_travel.length() < 7.0:
 		return false
 	moved = true
 	if DisplayServer.has_feature(DisplayServer.FEATURE_WINDOW_DRAG):
@@ -58,10 +60,10 @@ func update_drag() -> bool:
 	return true
 
 func handle_motion(relative: Vector2) -> void:
-	if not dragging or not wayland or native_drag:
+	if not dragging or native_drag:
 		return
 	_local_travel += relative
-	if _local_travel.length() >= 5.0 and DisplayServer.has_method("window_start_drag"):
+	if wayland and _local_travel.length() >= 7.0 and DisplayServer.has_method("window_start_drag"):
 		moved = true
 		native_drag = true
 		DisplayServer.call("window_start_drag", window.get_window_id())
@@ -73,6 +75,14 @@ func end_drag() -> bool:
 	if enabled and not wayland:
 		keep_on_screen()
 	return was_moved
+
+func step_roam(delta: float, direction: float) -> void:
+	if not enabled or wayland or suppressed or dragging: return
+	_roam_fraction += delta * 36.0 * direction
+	var travel: int = int(_roam_fraction)
+	_roam_fraction -= travel
+	window.position.x += travel
+	keep_on_screen()
 
 func keep_on_screen() -> void:
 	if not enabled or wayland:

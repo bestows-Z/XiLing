@@ -23,6 +23,14 @@ var _recent: Array[StringName] = []
 var _cooldowns: Dictionary = {}
 var _resume: StringName = &"idle"
 var _rapid_reaction_timer: float = 0.0
+var goal: StringName = &"company"
+var thought: String = "先看看你在做什么，再自己玩一会儿。"
+var roam_direction: float = 1.0
+var _plan: Array[StringName] = []
+var _autonomous_activity: bool = false
+
+func is_autonomous_activity() -> bool:
+	return _autonomous_activity and not _dragging
 
 func _init() -> void:
 	_rng.randomize()
@@ -46,7 +54,12 @@ func tick(delta: float) -> void:
 		return
 	if action != &"idle":
 		if action_elapsed >= action_duration:
-			_enter(&"idle", false)
+			if _autonomous_activity and autonomous and not _plan.is_empty():
+				_enter(_plan.pop_front(), false)
+			else:
+				_plan.clear()
+				_autonomous_activity = false
+				_enter(&"idle", false)
 		return
 	_decision_timer -= step
 	if autonomous and _decision_timer <= 0.0:
@@ -60,6 +73,10 @@ func request(action_name: StringName, player: bool = true) -> bool:
 	if player and _interaction_cooldown > 0.0:
 		return false
 	if player:
+		_plan.clear()
+		_autonomous_activity = false
+		goal = &"company"
+		thought = "你来找我啦，先陪你玩！"
 		_interaction_cooldown = PLAYER_COOLDOWN
 		since_interaction = 0.0
 		mood.reward(action_name)
@@ -78,6 +95,8 @@ func set_dragging(active: bool) -> void:
 	if _dragging == active:
 		return
 	if active:
+		_plan.clear()
+		_autonomous_activity = false
 		_resume = action if action in [&"sleep", &"sit"] else &"idle"
 	_dragging = active
 	_enter(&"drag" if active else _resume, active)
@@ -94,7 +113,7 @@ func _enter(next_action: StringName, player: bool) -> void:
 	action_duration = float(DURATIONS[next_action])
 	_player_active = player and next_action != &"idle"
 	if next_action == &"idle":
-		_decision_timer = _rng.randf_range(20.0, 40.0) if since_interaction > 120.0 else _rng.randf_range(4.0, 9.0)
+		_decision_timer = _rng.randf_range(8.0, 16.0) if since_interaction > 120.0 else _rng.randf_range(3.0, 6.0)
 	else:
 		_cooldowns[next_action] = 25.0
 		_recent.append(next_action)
@@ -140,12 +159,45 @@ func _choose_action() -> void:
 	for candidate: StringName in scores:
 		roll -= float(scores[candidate])
 		if roll <= 0.0:
-			_enter(candidate, false)
+			_start_activity(candidate)
 			return
 	_enter(&"idle", false)
 
+func _start_activity(candidate: StringName) -> void:
+	_plan.clear()
+	_autonomous_activity = candidate != &"idle"
+	roam_direction = -1.0 if _rng.randf() < 0.5 else 1.0
+	match candidate:
+		&"sleep", &"yawn", &"sit":
+			goal = &"rest"
+			thought = "有点困了，找个舒服的地方眯一会儿。" if mood.energy < 40 else "现在很安静，坐下来歇一会儿。"
+			if candidate == &"sleep":
+				_plan.assign([&"sit", &"sleep", &"wake"])
+				candidate = &"yawn"
+		&"jump":
+			goal = &"play"
+			thought = "精力满满！蹲一下，再跳起来～"
+			# jump 的精绘动画本身已经包含下蹲、腾空与落地，避免重复起落。
+			_plan.assign([&"happy"])
+		&"walk", &"curious":
+			goal = &"explore"
+			thought = "有点无聊，去旁边逛逛有什么新发现。"
+			_plan.assign([&"walk", &"look"])
+			candidate = &"curious"
+		&"dance":
+			goal = &"play"
+			thought = "今天心情不错，自己跳一小段舞吧！"
+			_plan.assign([&"happy"])
+		&"wave":
+			goal = &"company"
+			thought = "想和你打个招呼，忙的话我就自己玩。"
+		_:
+			goal = &"observe"
+			thought = "看看周围，再想想接下来做什么。"
+	_enter(candidate, false)
+
 func snapshot() -> Dictionary:
-	return {"mood": mood.snapshot(), "autonomous": autonomous}
+	return {"mood": mood.snapshot(), "autonomous": autonomous, "goal": String(goal), "thought": thought}
 
 func restore(data: Dictionary) -> void:
 	if data.get("mood", {}) is Dictionary:
@@ -156,6 +208,12 @@ func restore(data: Dictionary) -> void:
 	_rapid_reaction_timer = 0.0
 	_recent.clear()
 	_cooldowns.clear()
+	_plan.clear()
+	_autonomous_activity = false
+	var saved_goal: Variant = data.get("goal", "company")
+	goal = StringName(saved_goal) if saved_goal in ["company", "rest", "play", "explore", "observe"] else &"company"
+	var saved_thought: Variant = data.get("thought", "先看看你在做什么，再自己玩一会儿。")
+	thought = saved_thought.left(100) if saved_thought is String else "先看看你在做什么，再自己玩一会儿。"
 	since_interaction = 0.0
 	_enter(&"idle", false)
 

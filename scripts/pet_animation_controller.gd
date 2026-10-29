@@ -1,5 +1,5 @@
 extends RefCounted
-## 表现层统一入口：原画两帧、程序关节、外部多帧资源共用同一行为状态。
+## 表现层统一入口：原始待机 PNG、实际动作图集、外部多帧资源。
 var sprite: AnimatedSprite2D
 var visual: Node2D
 var skin: RefCounted
@@ -50,16 +50,18 @@ func apply(brain: RefCounted) -> void:
 		visual.set_pose(action, progress, elapsed, brain.mood.label(), blinking and enabled)
 		return
 	visual.hide()
-	if skin.frames != null and skin.mode == &"custom":
+	if skin.frames != null and skin.mode in [&"custom", &"original"]:
 		var chosen: StringName = action if skin.frames.has_animation(action) and skin.frames.get_frame_count(action) > 0 else &"idle"
 		var total: float = skin.total_frame_duration(chosen)
 		if skin.frames.get_animation_loop(chosen) and total > 0.0:
 			progress = fposmod(brain.action_elapsed * skin.frames.get_animation_speed(chosen) / total, 1.0) if enabled else 0.0
 	skin.apply(sprite, action, progress, (blinking and enabled) or action == &"sleep")
 	if skin.mode == &"original" and enabled:
+		var texture: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+		if texture is AtlasTexture: sprite.position.y += 26.0
 		sprite.position.y += sin(elapsed * 1.8) * 5.0
 		sprite.scale *= 1.0 + sin(elapsed * 2.16) * 0.012
-		# 原图只保留旧版整体反馈，不冒充精绘肢体动画。
+		# 跳跃有弯膝/腾空实际图片，再补充位移；其他动作不靠整体缩放冒充。
 		var reaction: float = sin(progress * PI) if action == &"jump" else 0.0
 		sprite.position.y -= reaction * 18.0
 		sprite.scale *= 1.0 + reaction * 0.06
