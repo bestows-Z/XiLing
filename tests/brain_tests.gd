@@ -9,6 +9,7 @@ func _initialize() -> void:
 	_test_priority_and_cooldown()
 	_test_needs_and_persistence()
 	_test_autonomous_decisions()
+	_test_pacing()
 	_test_bad_time()
 	print("Brain tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)
@@ -87,7 +88,7 @@ func _test_autonomous_decisions() -> void:
 	var playful = Brain.new()
 	playful._start_activity(&"jump")
 	var jump_states: Array[StringName] = [playful.action]
-	for seconds: float in [1.2]:
+	for seconds: float in [float(Brain.DURATIONS[&"jump"])]:
 		playful.tick(seconds)
 		jump_states.append(playful.action)
 	check(jump_states == [&"jump", &"happy"], "autonomous jump plays one full crouch-airborne-land animation before celebrating")
@@ -111,3 +112,27 @@ func _test_bad_time() -> void:
 	check(brain.action_elapsed == 0.0, "invalid delta never corrupts state")
 	brain.tick(1e20)
 	check(is_finite(brain.mood.energy) and brain.action == &"idle", "long frames complete safely")
+
+func _test_pacing() -> void:
+	var brain = Brain.new()
+	brain.clock_hour = 12
+	brain.seed_rng(33)
+	check(brain.decision_delay_range() == Vector2(25, 45), "default natural activity waits25-45 seconds")
+	brain.tick(20)
+	check(brain.action == &"idle", "no abrupt autonomous activity in the first20 seconds")
+	brain.since_interaction = 180
+	check(brain.decision_delay_range() == Vector2(45, 90), "long absence lowers activity frequency")
+	brain.set_activity_rate("quiet")
+	check(brain.decision_delay_range() == Vector2(60, 120), "quiet setting waits longer")
+	brain.set_activity_rate("broken")
+	check(brain.activity_rate == "quiet", "unknown activity rate is rejected")
+	brain.reset()
+	brain.clock_hour = 12
+	var activities: int = 0
+	var serial: int = brain.activity_serial
+	for index: int in range(600):
+		brain.tick(0.5)
+		if brain.activity_serial != serial:
+			activities += 1
+			serial = brain.activity_serial
+	check(activities <= 8, "five unattended minutes do not become constant action spam")

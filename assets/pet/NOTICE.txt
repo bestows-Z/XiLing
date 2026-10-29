@@ -3,6 +3,7 @@ XiLing / 小汐人物素材
 xiaoxi.png、xiaoxi_blink.png：由项目维护者提供的原始 AI 生成角色图片。
 本次保留原始文件内容与原始待机、眨眼表现。
 actions/expressions.png、actions/motion.png：以原图为参照补充的 AI 生成动作图集。
+animations/ 下的 wave、walk、jump、dance、pet、feed、sleep、curious、stretch、groom：每个PNG是3列×2行的六帧连续动作图集，共60张不同图片，按原角色设定补充。
 生成工具：OpenAI 内置图像生成工具。精绘关键姿态并非逐帧手绘动画，也不代表每个行为都有独立专用美术。
 
 项目维护者明确授权将这些图片随 XiLing 开源分发。与本项目一起按根目录 MIT LICENSE 提供，权利范围以适用法律允许为限。

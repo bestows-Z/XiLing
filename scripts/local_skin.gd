@@ -8,6 +8,7 @@ var mode: StringName = &"native"
 var hit_image: Image
 var outline: PackedVector2Array = PackedVector2Array()
 var _texture_id: int = 0
+var frame_offset: Vector2 = Vector2.ZERO
 var original_path: String = "res://assets/pet/xiaoxi.png"
 var blink_path: String = "res://assets/pet/xiaoxi_blink.png"
 var custom_path: String = CUSTOM_PATH
@@ -85,6 +86,8 @@ func apply(sprite: AnimatedSprite2D, action: StringName, progress: float, blinki
 	if mode == &"original":
 		fit = minf(280.0 / texture.get_width(), 384.0 / texture.get_height())
 		if texture is AtlasTexture: fit = 320.0 / texture.get_height()
+		fit = float(texture.get_meta("display_fit", fit))
+	frame_offset = texture.get_meta("display_offset", Vector2(0, 26) if mode == &"original" and texture is AtlasTexture else Vector2.ZERO)
 	sprite.scale = Vector2.ONE * fit
 	if texture.get_instance_id() != _texture_id:
 		_texture_id = texture.get_instance_id()

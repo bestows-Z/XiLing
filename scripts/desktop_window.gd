@@ -1,4 +1,5 @@
 extends RefCounted
+const Locomotion = preload("res://scripts/pet_locomotion.gd")
 ## Owns OS window behavior; never manipulates the pet's pose.
 
 var window: Window
@@ -12,12 +13,14 @@ var _press_mouse: Vector2i
 var _press_window: Vector2i
 var _outline_timer: float = 0.0
 var _local_travel: Vector2 = Vector2.ZERO
-var _roam_fraction: float = 0.0
+var locomotion = Locomotion.new()
+var embedded: bool = false
 
 func setup(target: Window, test_mode: bool = false) -> void:
 	window = target
 	enabled = DisplayServer.get_name() != "headless" and not test_mode
 	wayland = DisplayServer.get_name().to_lower() == "wayland"
+	embedded = Engine.is_embedded_in_editor()
 	if not enabled:
 		return
 	window.transparent = true
@@ -76,13 +79,24 @@ func end_drag() -> bool:
 		keep_on_screen()
 	return was_moved
 
-func step_roam(delta: float, direction: float) -> void:
-	if not enabled or wayland or suppressed or dragging: return
-	_roam_fraction += delta * 36.0 * direction
-	var travel: int = int(_roam_fraction)
-	_roam_fraction -= travel
-	window.position.x += travel
-	keep_on_screen()
+func can_roam() -> bool:
+	return enabled and not wayland and not embedded and not suppressed and not dragging
+
+func step_roam(delta: float, direction: float) -> float:
+	if not can_roam(): return 0.0
+	if not locomotion.active:
+		var screen: int = DisplayServer.get_screen_from_rect(Rect2i(window.position, window.size))
+		if screen < 0: screen = DisplayServer.get_primary_screen()
+		var area: Rect2i = DisplayServer.screen_get_usable_rect(screen)
+		var limits: Rect2 = Rect2(Vector2(area.position), Vector2(maxi(0, area.size.x - window.size.x), maxi(0, area.size.y - window.size.y)))
+		locomotion.begin(Vector2(window.position), limits, direction)
+	var before: Vector2i = window.position
+	var target: Vector2i = locomotion.advance(delta)
+	if target != before: window.position = target
+	return absf(float(window.position.x - before.x))
+
+func stop_roam() -> void:
+	locomotion.stop()
 
 func keep_on_screen() -> void:
 	if not enabled or wayland:

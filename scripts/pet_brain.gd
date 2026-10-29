@@ -2,7 +2,7 @@ extends RefCounted
 ## 决策评分 + 有限状态；拖动 > 玩家 > 自主。时钟可注入以便测试。
 signal action_changed(action: StringName)
 const Mood = preload("res://scripts/pet_mood.gd")
-const DURATIONS: Dictionary = {&"idle": 0.0, &"wave": 2.2, &"jump": 1.2, &"dance": 4.0, &"sleep": 30.0, &"curious": 3.0, &"drag": 0.0, &"feed": 2.8, &"pet": 1.8, &"look": 3.0, &"happy": 2.5, &"angry": 2.0, &"surprised": 1.8, &"shy": 2.5, &"crouch": 1.8, &"takeoff": 0.7, &"land": 0.7, &"walk": 4.0, &"turn": 2.0, &"sit": 8.0, &"yawn": 3.0, &"wake": 2.5}
+const DURATIONS: Dictionary = {&"idle": 0.0, &"wave": 3.0, &"jump": 1.6, &"dance": 4.8, &"sleep": 30.0, &"curious": 3.0, &"drag": 0.0, &"feed": 3.8, &"pet": 3.2, &"look": 3.0, &"happy": 2.5, &"angry": 2.0, &"surprised": 1.8, &"shy": 2.5, &"crouch": 1.8, &"takeoff": 0.7, &"land": 0.7, &"walk": 6.5, &"turn": 2.0, &"sit": 8.0, &"yawn": 3.0, &"wake": 3.0, &"stretch": 4.8, &"groom": 4.8}
 const PLAYER_COOLDOWN: float = 0.4
 var mood = Mood.new()
 var action: StringName = &"idle"
@@ -15,7 +15,7 @@ var clock_hour: int = -1
 var since_interaction: float = 0.0
 var personality: Dictionary = {"playfulness": 0.7, "sociability": 0.6, "curiosity": 0.7}
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
-var _decision_timer: float = 5.0
+var _decision_timer: float = 35.0
 var _interaction_cooldown: float = 0.0
 var _player_active: bool = false
 var _dragging: bool = false
@@ -28,6 +28,8 @@ var thought: String = "先看看你在做什么，再自己玩一会儿。"
 var roam_direction: float = 1.0
 var _plan: Array[StringName] = []
 var _autonomous_activity: bool = false
+var activity_rate: String = "natural"
+var activity_serial: int = 0
 
 func is_autonomous_activity() -> bool:
 	return _autonomous_activity and not _dragging
@@ -37,7 +39,7 @@ func _init() -> void:
 
 func seed_rng(value: int) -> void:
 	_rng.seed = value
-	_decision_timer = _rng.randf_range(4.0, 8.0)
+	_schedule_decision()
 
 func tick(delta: float) -> void:
 	if not is_finite(delta) or delta <= 0.0:
@@ -61,6 +63,7 @@ func tick(delta: float) -> void:
 				_autonomous_activity = false
 				_enter(&"idle", false)
 		return
+	if mood.energy < 15.0: _decision_timer = minf(_decision_timer, 3.0)
 	_decision_timer -= step
 	if autonomous and _decision_timer <= 0.0:
 		_choose_action()
@@ -113,9 +116,9 @@ func _enter(next_action: StringName, player: bool) -> void:
 	action_duration = float(DURATIONS[next_action])
 	_player_active = player and next_action != &"idle"
 	if next_action == &"idle":
-		_decision_timer = _rng.randf_range(8.0, 16.0) if since_interaction > 120.0 else _rng.randf_range(3.0, 6.0)
+		_schedule_decision()
 	else:
-		_cooldowns[next_action] = 25.0
+		_cooldowns[next_action] = 180.0 if next_action in [&"jump", &"dance", &"stretch"] else 90.0
 		_recent.append(next_action)
 		if _recent.size() > 2:
 			_recent.pop_front()
@@ -131,7 +134,7 @@ func behavior_scores() -> Dictionary:
 	var night: bool = quiet_night and (hour >= 23 or hour < 7)
 	if mood.energy < 25.0:
 		return {&"sleep": 100.0}
-	var scores: Dictionary = {&"idle": 12.0, &"look": 10.0 + mood.curiosity * 0.15, &"sit": 7.0, &"yawn": 5.0 + (100.0 - mood.energy) * 0.2}
+	var scores: Dictionary = {&"idle": 12.0, &"look": 10.0 + mood.curiosity * 0.15, &"sit": 7.0, &"groom": 10.0, &"stretch": 7.0, &"yawn": 5.0 + (100.0 - mood.energy) * 0.2}
 	if night:
 		scores[&"sleep"] = 60.0
 		scores[&"sit"] = 25.0
@@ -146,6 +149,22 @@ func behavior_scores() -> Dictionary:
 		if key != &"idle" and (_recent.has(key) or float(_cooldowns.get(key, 0.0)) > 0.0):
 			scores.erase(key)
 	return scores
+
+func decision_delay_range() -> Vector2:
+	var quiet: bool = since_interaction > 120.0
+	match activity_rate:
+		"quiet": return Vector2(60, 120) if quiet else Vector2(35, 65)
+		"lively": return Vector2(25, 45) if quiet else Vector2(15, 25)
+	return Vector2(45, 90) if quiet else Vector2(25, 45)
+
+func _schedule_decision() -> void:
+	var interval: Vector2 = decision_delay_range()
+	_decision_timer = _rng.randf_range(interval.x, interval.y)
+
+func set_activity_rate(value: String) -> void:
+	if value == activity_rate or value not in ["quiet", "natural", "lively"]: return
+	activity_rate = value
+	_schedule_decision()
 
 func _personality_value(key: String) -> float:
 	var value: Variant = personality.get(key, 0.5)
@@ -165,6 +184,7 @@ func _choose_action() -> void:
 
 func _start_activity(candidate: StringName) -> void:
 	_plan.clear()
+	activity_serial += 1
 	_autonomous_activity = candidate != &"idle"
 	roam_direction = -1.0 if _rng.randf() < 0.5 else 1.0
 	match candidate:
@@ -184,6 +204,12 @@ func _start_activity(candidate: StringName) -> void:
 			thought = "有点无聊，去旁边逛逛有什么新发现。"
 			_plan.assign([&"walk", &"look"])
 			candidate = &"curious"
+		&"groom":
+			goal = &"observe"
+			thought = "整理一下头发和小鲸鱼发夹。"
+		&"stretch":
+			goal = &"rest"
+			thought = "伸个懒腰，放松一下肩膀。"
 		&"dance":
 			goal = &"play"
 			thought = "今天心情不错，自己跳一小段舞吧！"

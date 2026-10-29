@@ -25,6 +25,7 @@ var _was_dragging: bool = false
 var _double_click: bool = false
 var _save_timer: float = 0.0
 var _save_warning: bool = false
+var _last_announced_activity: int = -1
 var _single_click_wait: float:
 	get: return interaction.pending_click
 
@@ -82,9 +83,8 @@ func _process(delta: float) -> void:
 				_was_dragging = true
 		elif not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			_release_drag()
+	_update_roaming(step)
 	animator.tick(step * runtime.profile.animation_speed, brain)
-	if brain.action == &"walk" and brain.is_autonomous_activity() and runtime.settings.values["roaming"] and not menu.is_open() and not effects.playing and not controls.hidden and not is_mouse_on_pet():
-		desktop.step_roam(step, brain.roam_direction)
 	desktop.update_outline(_window_outline(), step, menu.is_open())
 	_save_timer += step
 	if _save_timer >= 10.0:
@@ -92,11 +92,24 @@ func _process(delta: float) -> void:
 		_save_state()
 		menu.refresh(brain.snapshot())
 
+func _update_roaming(step: float) -> void:
+	var inside_window: bool = get_viewport_rect().grow(12.0).has_point(get_global_mouse_position())
+	var hover_pause: bool = desktop.locomotion.pause_for_hover(is_mouse_on_pet(), inside_window)
+	var allowed: bool = brain.action == &"walk" and animator.enabled and runtime.settings.values["roaming"] and desktop.can_roam() and not menu.is_open() and not effects.playing and not controls.hidden and not hover_pause
+	animator.walk_paused = not allowed
+	if allowed:
+		animator.walk_distance += desktop.step_roam(step, brain.roam_direction) / float(runtime.settings.values["scale"])
+		brain.roam_direction = desktop.locomotion.direction
+		animator.walk_direction = desktop.locomotion.direction
+	else:
+		desktop.stop_roam()
+
 func _update_visual() -> void:
 	animator.apply(brain)
 
 func _window_outline() -> PackedVector2Array:
 	var points: PackedVector2Array = PackedVector2Array()
+	points.append_array(animator.transition.outline)
 	var local_outline: PackedVector2Array = visual.get_outline() if skin.mode == &"native" else skin.outline
 	for point: Vector2 in local_outline:
 		points.append(get_global_transform_with_canvas() * point)
@@ -210,7 +223,9 @@ func _on_action_changed(action: StringName) -> void:
 	menu.refresh(brain.snapshot())
 	if not brain.proactive and brain.since_interaction > 1.0: return
 	if brain.is_autonomous_activity() and action != &"idle":
-		menu.say(brain.thought, 5.0)
+		if _last_announced_activity != brain.activity_serial:
+			_last_announced_activity = brain.activity_serial
+			menu.say(brain.thought, 5.0)
 		return
 	var words: Dictionary = {&"wave": ["嗨，今天也一起加油！", "海风给你捎来一声问好～"], &"jump": "嘿咻！", &"dance": "跟着海浪摇一摇～", &"sleep": "我眯一会儿……", &"wake": "睡醒啦～", &"curious": "在忙什么呀？", &"feed": ["谢谢，能量补充中！", "啊呜，收到小点心啦～"], &"pet": ["嘿嘿，好舒服～", "再摸摸头嘛～", "小汐收到你的关心啦！"], &"drag": "一起搬个家～", &"surprised": "哇，好多小点点！"}
 	if words.has(action):
@@ -241,6 +256,7 @@ func _apply_settings() -> void:
 	brain.autonomous = values["autonomous"]
 	brain.proactive = values["proactive"]
 	brain.quiet_night = values["quiet_night"]
+	brain.set_activity_rate(values["activity_rate"])
 	animator.enabled = values["animations"]
 	Engine.max_fps = values["max_fps"]
 	desktop.set_topmost(values["topmost"])

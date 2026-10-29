@@ -61,6 +61,35 @@ func _initialize() -> void:
 			original.apply(original_sprite, action, 0.25, false)
 			check(original_sprite.animation == action and original_sprite.sprite_frames.get_frame_texture(action, original_sprite.frame) is AtlasTexture, "%s displays a real action pose" % action)
 		check(original.frames.get_frame_texture(&"sleep", 0) is AtlasTexture, "sleep shows its actual sleeping drawing")
+		for action: StringName in [&"wave", &"walk", &"jump", &"dance", &"pet", &"feed", &"sleep", &"curious", &"stretch", &"groom"]:
+			check(original.frames.has_animation(action) and original.frames.get_frame_count(action) == 6, "%s has six actual picture frames" % action)
+			if not original.frames.has_animation(action): continue
+			var fingerprints: Dictionary = {}
+			var first_fit: float = -1.0
+			for index: int in range(original.frames.get_frame_count(action)):
+				var texture: Texture2D = original.frames.get_frame_texture(action, index)
+				fingerprints[hash(texture.get_image().get_data())] = true
+				var fit: float = float(texture.get_meta("display_fit", -1.0))
+				if first_fit < 0.0: first_fit = fit
+				check(fit > 0.0 and fit == first_fit, "%s uses a single stable frame scale" % action)
+				check(texture.get_image().get_pixel(0, 0).a < 0.1, "%s frame has transparent margins" % action)
+			check(fingerprints.size() == 6, "%s has six distinct images instead of duplicate padding" % action)
+		var walking_brain = Brain.new()
+		walking_brain.request(&"walk")
+		var walking_animator = Animator.new()
+		var drawing = Visual.new()
+		original_sprite.add_child(drawing)
+		walking_animator.setup(original_sprite, drawing, original)
+		walking_animator.walk_distance = 27.0
+		walking_animator.apply(walking_brain)
+		check(original_sprite.animation == &"walk" and original_sprite.frame == 3, "walk frame follows distance traveled")
+		walking_animator.walk_paused = true
+		walking_animator.walk_distance = 54.0
+		walking_animator.apply(walking_brain)
+		check(original_sprite.animation == &"walk" and original_sprite.frame == 3, "paused displacement freezes the same pose instead of swapping hit silhouettes")
+		walking_animator.walk_direction = -1
+		walking_animator.apply(walking_brain)
+		check(original_sprite.scale.x < 0, "leftward walking mirrors both picture and coordinate transform")
 		original_sprite.free()
 	print("Animation tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)

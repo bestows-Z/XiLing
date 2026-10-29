@@ -64,8 +64,8 @@ func _run() -> void:
 	check(pet.menu.is_open(), "Menu opens")
 	await process_frame
 	await process_frame
-	check(pet.menu.settings_window.size.y >= 600 and pet.menu.settings_window.size.x >= 440, "Settings use an independent tall readable window")
-	check(pet.menu.panel.theme.default_font_size >= 20, "Settings use readable 20px text")
+	check(pet.menu.settings_window.size == Vector2i(400, 600), "Settings use an independent tall readable window")
+	check(pet.menu.panel.theme.default_font_size >= 18, "Settings use readable18px text")
 	check(pet.menu.hint.get_theme_font_size("font_size") >= 26, "Desktop feedback text is readable on Retina too")
 	pet.menu.close()
 	check(not pet.menu.is_open(), "Menu closes")

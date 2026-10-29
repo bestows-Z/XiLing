@@ -29,8 +29,8 @@ func _ready() -> void:
 	settings_window.title = "汐灵 · 互动与设置"
 	settings_window.visible = false
 	settings_window.force_native = DisplayServer.get_name() != "headless"
-	settings_window.size = Vector2i(480, 740)
-	settings_window.min_size = Vector2i(440, 440)
+	settings_window.size = Vector2i(400, 600)
+	settings_window.min_size = Vector2i(380, 400)
 	settings_window.transient = true
 	settings_window.wrap_controls = false
 	settings_window.close_requested.connect(close)
@@ -44,10 +44,10 @@ func _ready() -> void:
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	settings_window.add_child(panel)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	panel.add_theme_stylebox_override("panel", _style("f1f7fc", 20, 0))
+	panel.add_theme_stylebox_override("panel", _style("f1f7fc", 14, 0))
 	var theme: Theme = Theme.new()
 	theme.default_font = UI_FONT
-	theme.default_font_size = 20
+	theme.default_font_size = 18
 	for type_name: StringName in [&"Label", &"Button", &"CheckButton", &"OptionButton"]:
 		for color_name: StringName in [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_selected_color"]:
 			theme.set_color(color_name, type_name, Color("25465f"))
@@ -56,16 +56,16 @@ func _ready() -> void:
 			theme.set_stylebox(state, type_name, _style("dceefb" if state == &"normal" else "bdddf2", 10, 10))
 	panel.theme = theme
 	var column: VBoxContainer = VBoxContainer.new()
-	column.add_theme_constant_override("separation", 12)
+	column.add_theme_constant_override("separation", 8)
 	panel.add_child(column)
 	_title_label = Label.new()
 	_title_label.text = "汐灵 · 小汐"
-	_title_label.add_theme_font_size_override("font_size", 28)
+	_title_label.add_theme_font_size_override("font_size", 24)
 	column.add_child(_title_label)
 	status = Label.new()
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.add_theme_font_size_override("font_size", 18)
-	status.custom_minimum_size.y = 68
+	status.add_theme_font_size_override("font_size", 16)
+	status.custom_minimum_size.y = 58
 	column.add_child(status)
 	_scroll = ScrollContainer.new()
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -79,6 +79,12 @@ func _ready() -> void:
 	for entry: Array in [["自主生活", "autonomous"], ["自己在桌面散步", "roaming"], ["主动表达想法", "proactive"], ["夜间安静休息", "quiet_night"]]:
 		_add_toggle(list, entry[0], entry[1])
 	autonomous_toggle = _controls["autonomous"]
+	var rate: OptionButton = OptionButton.new()
+	rate.custom_minimum_size.y = 40
+	for label: String in ["活动节奏：自然 · 25–45秒", "活动节奏：安静 · 35–65秒", "活动节奏：活泼 · 15–25秒"]: rate.add_item(label)
+	rate.item_selected.connect(func(index: int) -> void: setting_changed.emit("activity_rate", ["natural", "quiet", "lively"][index]))
+	_controls["activity_rate"] = rate
+	list.add_child(rate)
 	_heading(list, "外观与窗口")
 	_scale_label = Label.new()
 	list.add_child(_scale_label)
@@ -111,7 +117,7 @@ func _ready() -> void:
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	list.add_child(grid)
-	for entry: Array in [["摸摸", &"pet"], ["喂食 F", &"feed"], ["挥手", &"wave"], ["跳跃", &"jump"], ["跳舞 D", &"dance"], ["睡 / 醒", &"sleep"]]:
+	for entry: Array in [["摸摸", &"pet"], ["喂食 F", &"feed"], ["挥手", &"wave"], ["跳跃", &"jump"], ["跳舞 D", &"dance"], ["睡 / 醒", &"sleep"], ["散步", &"walk"], ["伸懒腰", &"stretch"], ["理头发", &"groom"]]:
 		var action: StringName = entry[1]
 		var button: Button = _button(entry[0])
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -164,15 +170,15 @@ func _style(color: String, margin: int, radius: int) -> StyleBoxFlat:
 func _heading(parent: Control, text: String) -> void:
 	var label: Label = Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", 22)
+	label.add_theme_font_size_override("font_size", 20)
 	parent.add_child(label)
 
 func _add_toggle(parent: Control, text: String, key: String) -> void:
 	var row: PanelContainer = PanelContainer.new()
-	row.add_theme_stylebox_override("panel", _style("ffffff", 10, 8))
+	row.add_theme_stylebox_override("panel", _style("ffffff", 5, 7))
 	var toggle: CheckButton = CheckButton.new()
 	toggle.text = text
-	toggle.custom_minimum_size.y = 36
+	toggle.custom_minimum_size.y = 30
 	toggle.toggled.connect(func(value: bool) -> void: setting_changed.emit(key, value))
 	row.add_child(toggle)
 	parent.add_child(row)
@@ -181,7 +187,7 @@ func _add_toggle(parent: Control, text: String, key: String) -> void:
 func _button(text: String) -> Button:
 	var button: Button = Button.new()
 	button.text = text
-	button.custom_minimum_size.y = 46
+	button.custom_minimum_size.y = 40
 	return button
 
 func is_open() -> bool:
@@ -194,14 +200,14 @@ func toggle(data: Dictionary) -> void:
 		if DisplayServer.get_name() != "headless":
 			var owner_window: Window = get_window()
 			var area: Rect2i = DisplayServer.screen_get_usable_rect(owner_window.current_screen)
-			# macOS 的 Window.size 为物理像素，Retina 上必须补偿缩放才是可读的 20pt。
+			# macOS 的 Window.size 为物理像素，Retina 上必须补偿缩放才是可读的 18pt。
 			_ui_scale = DisplayServer.screen_get_scale(owner_window.current_screen) if OS.get_name() == "macOS" else maxf(1.0, DisplayServer.screen_get_dpi(owner_window.current_screen) / 96.0)
 			_ui_scale = clampf(_ui_scale, 1.0, 2.5)
-			var logical_height: int = mini(740, maxi(440, int(area.size.y / _ui_scale) - 80))
+			var logical_height: int = mini(600, maxi(400, int(area.size.y / _ui_scale) - 80))
 			settings_window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-			settings_window.content_scale_size = Vector2i(480, logical_height)
-			settings_window.min_size = Vector2i(Vector2(440, 440) * _ui_scale)
-			settings_window.size = Vector2i(Vector2(480, logical_height) * _ui_scale)
+			settings_window.content_scale_size = Vector2i(400, logical_height)
+			settings_window.min_size = Vector2i(Vector2(380, 400) * _ui_scale)
+			settings_window.size = Vector2i(Vector2(400, logical_height) * _ui_scale)
 			var desired: Vector2i = owner_window.position + Vector2i(-settings_window.size.x - 24, -140)
 			settings_window.position = Vector2i(clampi(desired.x, area.position.x, maxi(area.position.x, area.end.x - settings_window.size.x)), clampi(desired.y, area.position.y + 30, maxi(area.position.y + 30, area.end.y - settings_window.size.y)))
 		settings_window.show()
@@ -219,6 +225,7 @@ func refresh_settings(data: Dictionary) -> void:
 		var control: Control = _controls[key]
 		if control is CheckButton: control.set_pressed_no_signal(data[key])
 		elif key == "scale": control.set_value_no_signal(data[key])
+		elif key == "activity_rate": control.select(["natural", "quiet", "lively"].find(data[key]))
 		elif key == "max_fps":
 			for index: int in range(control.item_count):
 				if control.get_item_id(index) == int(data[key]): control.select(index)

@@ -1,6 +1,6 @@
 extends RefCounted
 signal changed(key: String, value: Variant)
-const DEFAULTS: Dictionary = {"scale": 1.0, "topmost": true, "animations": true, "max_fps": 60, "autonomous": true, "roaming": true, "proactive": true, "quiet_night": true, "skin": "auto", "character": "xiaoxi"}
+const DEFAULTS: Dictionary = {"scale": 1.0, "topmost": true, "animations": true, "max_fps": 60, "autonomous": true, "roaming": true, "activity_rate": "natural", "proactive": true, "quiet_night": true, "skin": "auto", "character": "xiaoxi"}
 var values: Dictionary = DEFAULTS.duplicate(true)
 
 func set_value(key: String, value: Variant) -> void:
@@ -18,6 +18,8 @@ func set_value(key: String, value: Variant) -> void:
 		"skin":
 			if value in ["auto", "original", "native", "custom"]:
 				clean = value
+		"activity_rate":
+			if value in ["quiet", "natural", "lively"]: clean = value
 		"character":
 			if value in ["xiaoxi", "ocean_demo"]:
 				clean = value

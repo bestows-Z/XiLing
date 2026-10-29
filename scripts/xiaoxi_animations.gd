@@ -2,6 +2,8 @@ extends RefCounted
 ## 真实绘制的动作关键帧；待机始终使用用户原始 PNG。
 const EXPRESSIONS: String = "res://assets/pet/actions/expressions.png"
 const MOTION: String = "res://assets/pet/actions/motion.png"
+const Strip = preload("res://scripts/sprite_strip.gd")
+const SEQUENCES: Array[StringName] = [&"wave", &"walk", &"jump", &"dance", &"pet", &"feed", &"sleep", &"curious", &"stretch", &"groom"]
 
 static func append_to(frames: SpriteFrames) -> void:
 	if not ResourceLoader.exists(EXPRESSIONS): return
@@ -36,6 +38,20 @@ static func append_to(frames: SpriteFrames) -> void:
 	frames.set_animation_loop(&"walk", true)
 	frames.set_animation_speed(&"walk", 1.6)
 	_add(frames, &"dance", [idle, _cell(motion, 2, 2, 2), _cell(motion, 2, 2, 3), _cell(motion, 2, 2, 2), _cell(motion, 2, 2, 3), idle], [0.1, 0.2, 0.2, 0.2, 0.2, 0.1])
+	for action: StringName in SEQUENCES:
+		var strip: Array[Texture2D] = Strip.load_six("res://assets/pet/animations/%s.png" % action, action == &"sleep")
+		if strip.size() != 6: continue
+		if frames.has_animation(action): frames.remove_animation(action)
+		_add(frames, action, strip, [1, 1, 1, 1, 1, 1])
+		if action in [&"walk", &"sleep"]:
+			frames.set_animation_loop(action, true)
+			frames.set_animation_speed(action, 0.8 if action == &"sleep" else 4.0)
+	for pair: Array in [[&"happy", &"pet"], [&"shy", &"pet"], [&"look", &"curious"], [&"wake", &"stretch"]]:
+		if not frames.has_animation(pair[1]) or frames.get_frame_count(pair[1]) != 6: continue
+		frames.remove_animation(pair[0])
+		frames.add_animation(pair[0])
+		frames.set_animation_loop(pair[0], false)
+		for index: int in range(6): frames.add_frame(pair[0], frames.get_frame_texture(pair[1], index))
 
 static func _cell(sheet: Texture2D, columns: int, rows: int, index: int) -> AtlasTexture:
 	var texture: AtlasTexture = AtlasTexture.new()
