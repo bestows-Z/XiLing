@@ -141,6 +141,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if controls.hidden: return
 	if not event is InputEventKey or not event.pressed or event.echo: return
 	match event.keycode:
 		KEY_M: _toggle_menu()

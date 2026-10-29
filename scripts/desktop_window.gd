@@ -123,6 +123,7 @@ func set_hidden(value: bool) -> void:
 	suppressed = value
 	if not enabled or wayland: return
 	window.mouse_passthrough = value
+	window.unfocusable = value
 	if value:
 		# 主窗口不能 hide；空绘制配合窗外输入区域实现隐藏和全穿透。
 		window.mouse_passthrough_polygon = PackedVector2Array([Vector2(-10, -10), Vector2(-9, -10), Vector2(-9, -9)])

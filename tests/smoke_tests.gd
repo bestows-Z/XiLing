@@ -70,6 +70,11 @@ func _run() -> void:
 	check(pet.menu._title_label.text.contains("海风演示"), "configured character name reaches UI")
 	pet.controls.hide_pet()
 	check(pet.controls.hidden and not main.visible and pet.desktop.suppressed, "hiding suppresses drawing instead of unsupported main-window hide")
+	var hidden_key: InputEventKey = InputEventKey.new()
+	hidden_key.keycode = KEY_B
+	hidden_key.pressed = true
+	pet._unhandled_key_input(hidden_key)
+	check(not pet.effects.playing, "hidden pet never consumes gameplay keyboard input")
 	pet.controls.show_pet()
 	check(not pet.controls.hidden and main.visible and not pet.desktop.suppressed, "show restores drawing and input")
 	main.queue_free()
