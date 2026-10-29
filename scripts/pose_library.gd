@@ -3,12 +3,16 @@ extends RefCounted
 ## A custom renderer can consume the same dictionary without changing the brain.
 
 const ACTIONS: Array[StringName] = [
-	&"idle", &"wave", &"jump", &"dance", &"sleep", &"curious", &"drag", &"feed", &"pet"
+	&"idle", &"wave", &"jump", &"dance", &"sleep", &"curious", &"drag", &"feed", &"pet",
+	&"look", &"happy", &"angry", &"surprised", &"shy", &"crouch", &"takeoff", &"land", &"walk", &"turn", &"sit", &"yawn", &"wake"
 ]
 
 
 static func sample(action: StringName, progress: float, elapsed: float) -> Dictionary:
 	var t: float = clampf(progress, 0.0, 1.0)
+	if action == &"crouch": return sample(&"jump", t * 0.20, elapsed)
+	if action == &"takeoff": return sample(&"jump", 0.20 + t * 0.18, elapsed)
+	if action == &"land": return sample(&"jump", 0.70 + t * 0.30, elapsed)
 	var bob: float = sin(elapsed * 1.8) * 3.0
 	var torso: Vector2 = Vector2(0.0, bob)
 	var head_angle: float = sin(elapsed * 1.4) * 0.025
@@ -120,6 +124,66 @@ static func sample(action: StringName, progress: float, elapsed: float) -> Dicti
 			right_hand += Vector2(7, -7)
 			eye = &"happy"
 			mouth = &"happy"
+
+		&"look", &"turn":
+			var glance: float = sin(t * TAU)
+			head_angle = glance * 0.15
+			torso.x = glance * (8.0 if action == &"turn" else 2.0)
+			left_elbow += Vector2(glance * 7.0, -absf(glance) * 5.0)
+			right_elbow += Vector2(glance * 7.0, absf(glance) * 5.0)
+		&"happy":
+			left_hand = Vector2(-62, -22)
+			right_hand = Vector2(62, -22)
+			left_elbow = Vector2(-53, 10)
+			right_elbow = Vector2(53, 10)
+			eye = &"happy"
+			mouth = &"happy"
+		&"angry":
+			left_elbow = Vector2(-53, 25)
+			right_elbow = Vector2(53, 25)
+			left_hand = Vector2(-28, 30)
+			right_hand = Vector2(28, 30)
+			eye = &"angry"
+			mouth = &"sad"
+		&"surprised":
+			left_elbow = Vector2(-56, -12)
+			right_elbow = Vector2(56, -12)
+			left_hand = Vector2(-42, -45)
+			right_hand = Vector2(42, -45)
+			mouth = &"happy"
+		&"shy":
+			left_elbow = Vector2(-40, 0)
+			right_elbow = Vector2(40, 0)
+			left_hand = Vector2(-25, -48)
+			right_hand = Vector2(25, -48)
+			head_angle = 0.12
+			eye = &"happy"
+		&"walk":
+			var stride: float = sin(t * TAU * 4.0)
+			torso.x = sin(t * TAU) * 15.0
+			left_knee += Vector2(stride * 14.0, -maxf(stride, 0) * 10.0)
+			right_knee += Vector2(-stride * 14.0, minf(stride, 0) * 10.0)
+			left_foot += Vector2(stride * 22.0, -maxf(stride, 0) * 24.0)
+			right_foot += Vector2(-stride * 22.0, minf(stride, 0) * 24.0)
+			left_hand.x -= stride * 14.0
+			right_hand.x += stride * 14.0
+		&"sit":
+			torso.y += 22.0
+			left_knee = Vector2(-39, 117)
+			right_knee = Vector2(39, 117)
+			left_foot = Vector2(-62, 130)
+			right_foot = Vector2(62, 130)
+			left_hand = Vector2(-29, 67)
+			right_hand = Vector2(29, 67)
+		&"yawn", &"wake":
+			var stretch: float = sin(t * PI)
+			left_elbow = left_elbow.lerp(Vector2(-59, -35), stretch)
+			right_elbow = right_elbow.lerp(Vector2(59, -35), stretch)
+			left_hand = left_hand.lerp(Vector2(-51, -80), stretch)
+			right_hand = right_hand.lerp(Vector2(51, -80), stretch)
+			head_angle = -stretch * 0.08
+			eye = &"closed" if t < 0.65 else &"normal"
+			mouth = &"happy" if action == &"yawn" else &"smile"
 
 	return {
 		"body": torso, "head": Vector2(0, -82) + torso,

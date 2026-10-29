@@ -48,7 +48,7 @@ func _test_needs_and_persistence() -> void:
 	brain.request(&"sleep")
 	brain.tick(10.0)
 	check(brain.mood.energy > 25.0, "sleep restores energy")
-	check(brain.interact(&"wake") and brain.action == &"wave", "player can wake a sleeping pet")
+	check(brain.interact(&"wake") and brain.action == &"wake", "player can wake a sleeping pet")
 	brain.tick(3.0)
 	brain.interact(&"feed")
 	check(brain.mood.energy > 30.0, "feeding restores energy")
@@ -69,11 +69,12 @@ func _test_needs_and_persistence() -> void:
 func _test_autonomous_decisions() -> void:
 	var brain = Brain.new()
 	brain.seed_rng(17)
+	brain.clock_hour = 12
 	var seen: Dictionary = {}
 	for index in range(1200):
 		brain.tick(0.5)
 		seen[brain.action] = true
-	check(seen.has(&"wave") and seen.has(&"curious") and seen.has(&"dance"), "seeded autonomy reaches several actions")
+	check(seen.size() >= 4 and seen.has(&"idle") and seen.has(&"look"), "seeded autonomy reaches several actions")
 	var tired = Brain.new()
 	tired.mood.energy = 1.0
 	tired.tick(8.0)

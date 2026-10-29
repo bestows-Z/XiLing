@@ -53,7 +53,7 @@ func _apply_expression() -> void:
 	if _action == &"sleep" or _mood == &"sleepy":
 		pose["eye"] = &"closed"
 		pose["mouth"] = &"sleep"
-	elif _mood == &"happy":
+	elif _mood == &"happy" and _action in [&"idle", &"look", &"curious", &"walk"]:
 		pose["eye"] = &"happy"
 		pose["mouth"] = &"happy"
 	elif _mood == &"sad" or _mood == &"lonely":
@@ -128,6 +128,9 @@ func _face() -> void:
 	for x: float in [-18.0, 18.0]:
 		if eye == &"closed":
 			_head_capsule(Vector2(x - 7, 10), Vector2(x + 7, 10), 1.8, INK)
+		elif eye == &"angry":
+			_head_capsule(Vector2(x - 6, 5 if x < 0 else 0), Vector2(x + 6, 0 if x < 0 else 5), 2.0, INK)
+			_head_ellipse(Vector2(x, 12), Vector2(4, 5), INK, false)
 		elif eye == &"happy":
 			_head_capsule(Vector2(x - 7, 11), Vector2(x, 6), 1.8, INK)
 			_head_capsule(Vector2(x, 6), Vector2(x + 7, 11), 1.8, INK)

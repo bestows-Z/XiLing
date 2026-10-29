@@ -1,0 +1,73 @@
+name: Candidate builds
+on:
+  workflow_dispatch:
+    inputs:
+      rc_tag:
+        description: 'Optional prerelease tag, e.g. v0.3.0-rc.1; blank builds artifacts only'
+        required: false
+        default: ''
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install official engine and export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable
+          cd /tmp
+          for file in Godot_v4.7.2-stable_linux.x86_64.zip Godot_v4.7.2-stable_export_templates.tpz SHA512-SUMS.txt; do
+            curl -fsSL --retry 3 "$base/$file" -o "$file"
+          done
+          sha512sum --check --ignore-missing SHA512-SUMS.txt
+          unzip -q Godot_v4.7.2-stable_linux.x86_64.zip -d godot-bin
+          chmod +x godot-bin/Godot_v4.7.2-stable_linux.x86_64
+          echo "GODOT_BIN=/tmp/godot-bin/Godot_v4.7.2-stable_linux.x86_64" >> "$GITHUB_ENV"
+          unzip -q Godot_v4.7.2-stable_export_templates.tpz -d godot-templates
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          cp -a godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.7.2.stable/"
+      - run: python3 tools/repository_check.py
+      - run: python3 tools/check.py
+      - name: Export three unsigned candidates
+        run: |
+          set -euo pipefail
+          mkdir -p exports
+          "$GODOT_BIN" --headless --path . --export-release "Windows Desktop" exports/XiLing.exe
+          "$GODOT_BIN" --headless --path . --export-release "Linux" exports/XiLing.x86_64
+          "$GODOT_BIN" --headless --path . --export-release "macOS" exports/XiLing-macOS.zip
+          tar -czf exports/XiLing-Linux-x64.tar.gz -C exports XiLing.x86_64
+          (cd exports && sha256sum XiLing.exe XiLing-Linux-x64.tar.gz XiLing-macOS.zip > SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: XiLing-unsigned-candidates-${{ github.sha }}
+          path: |
+            exports/XiLing.exe
+            exports/XiLing-Linux-x64.tar.gz
+            exports/XiLing-macOS.zip
+            exports/SHA256SUMS.txt
+          if-no-files-found: error
+  prerelease:
+    needs: build
+    if: inputs.rc_tag != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: XiLing-unsigned-candidates-${{ github.sha }}
+          path: exports
+      - name: Publish only an explicitly requested prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RC_TAG: ${{ inputs.rc_tag }}
+        run: |
+          set -euo pipefail
+          [[ "$RC_TAG" =~ ^v0\.3\.0-rc\.[0-9]+$ ]] || { echo 'Expected v0.3.0-rc.N'; exit 1; }
+          (cd exports && sha256sum -c SHA256SUMS.txt)
+          gh release create "$RC_TAG" exports/XiLing.exe exports/XiLing-Linux-x64.tar.gz exports/XiLing-macOS.zip exports/SHA256SUMS.txt --target "$GITHUB_SHA" --prerelease --title "XiLing $RC_TAG · 未签名候选版" --notes '自动检查与导出通过的候选产物。未经三平台完整桌面验收；macOS 未签名、未公证。请先核对 SHA256SUMS.txt。'

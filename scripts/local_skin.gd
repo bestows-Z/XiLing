@@ -7,11 +7,19 @@ var mode: StringName = &"native"
 var hit_image: Image
 var outline: PackedVector2Array = PackedVector2Array()
 var _texture_id: int = 0
+var original_path: String = "res://assets/pet/xiaoxi.png"
+var blink_path: String = "res://assets/pet/xiaoxi_blink.png"
+var custom_path: String = CUSTOM_PATH
+
+func configure(profile: Resource) -> void:
+	original_path = profile.original_image
+	blink_path = profile.blink_image
+	custom_path = profile.animation_frames
 
 func load_custom() -> bool:
-	if not ResourceLoader.exists(CUSTOM_PATH):
+	if custom_path.is_empty() or not ResourceLoader.exists(custom_path):
 		return false
-	var resource: Resource = load(CUSTOM_PATH)
+	var resource: Resource = load(custom_path)
 	if not resource is SpriteFrames:
 		return false
 	var candidate: SpriteFrames = resource as SpriteFrames
@@ -22,9 +30,8 @@ func load_custom() -> bool:
 	return true
 
 func load_original() -> bool:
-	var open_path: String = "res://assets/pet/xiaoxi.png"
-	var blink_path: String = "res://assets/pet/xiaoxi_blink.png"
-	if not FileAccess.file_exists(open_path):
+	var open_path: String = original_path
+	if open_path.is_empty() or not FileAccess.file_exists(open_path):
 		return false
 	var open_image: Image = _read_local_image(open_path)
 	if open_image == null or open_image.is_empty():
@@ -61,7 +68,14 @@ func apply(sprite: AnimatedSprite2D, action: StringName, progress: float, blinki
 	if mode == &"original":
 		sprite.frame = 1 if blinking and count > 1 else 0
 	else:
-		sprite.frame = clampi(int(progress * count), 0, count - 1)
+		var remaining: float = clampf(progress, 0.0, 1.0) * total_frame_duration(chosen)
+		var selected: int = count - 1
+		for index: int in range(count):
+			remaining -= frames.get_frame_duration(chosen, index)
+			if remaining < 0.0:
+				selected = index
+				break
+		sprite.frame = selected
 	var texture: Texture2D = frames.get_frame_texture(chosen, sprite.frame)
 	if texture == null:
 		return
@@ -93,3 +107,10 @@ func _build_outline() -> void:
 			points.append(point - Vector2(hit_image.get_size()) * 0.5)
 	# A single OS polygon cannot represent disconnected accessories; preserve them with a hull.
 	outline = Geometry2D.convex_hull(points) if points.size() >= 3 else PackedVector2Array()
+
+func total_frame_duration(animation_name: StringName) -> float:
+	var total: float = 0.0
+	if frames != null and frames.has_animation(animation_name):
+		for index: int in range(frames.get_frame_count(animation_name)):
+			total += frames.get_frame_duration(animation_name, index)
+	return total

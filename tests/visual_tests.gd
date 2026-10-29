@@ -57,5 +57,5 @@ func _initialize() -> void:
 	visual.free()
 	for failure: String in failures:
 		push_error(failure)
-	print("Visual tests: %d failures; 9 actions x 21 poses checked" % failures.size())
+	print("Visual tests: %d failures; %d actions x 21 poses checked" % [failures.size(), Poses.ACTIONS.size()])
 	quit(0 if failures.is_empty() else 1)

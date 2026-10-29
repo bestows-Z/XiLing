@@ -1,0 +1,10 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/character_profile.gd" id="1"]
+[resource]
+script = ExtResource("1")
+identifier = "ocean_demo"
+display_name = "海风演示"
+original_image = ""
+blink_image = ""
+animation_frames = ""
+personality = {"playfulness": 0.35, "sociability": 0.3, "curiosity": 0.9}

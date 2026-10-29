@@ -48,7 +48,12 @@ func update_drag() -> bool:
 	if not moved and Vector2(distance).length() < 5.0:
 		return false
 	moved = true
-	window.position = _press_window + distance
+	if DisplayServer.has_feature(DisplayServer.FEATURE_WINDOW_DRAG):
+		if not native_drag:
+			native_drag = true
+			window.start_drag()
+	else:
+		window.position = _press_window + distance
 	return true
 
 func handle_motion(relative: Vector2) -> void:
@@ -99,3 +104,16 @@ func update_outline(points: PackedVector2Array, delta: float, modal: bool = fals
 func set_topmost(active: bool) -> void:
 	if enabled and not wayland:
 		window.always_on_top = active
+
+func set_scale(value: float) -> void:
+	if not enabled:
+		return
+	window.content_scale_size = Vector2i(360, 480)
+	window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	window.size = Vector2i(Vector2(360, 480) * clampf(value, 0.6, 1.5))
+	keep_on_screen()
+
+func restore_position(value: Variant) -> void:
+	if enabled and not wayland and value is Vector2i:
+		window.position = value
+		keep_on_screen()
