@@ -1,0 +1,10 @@
+Noto Sans SC Regular (unmodified)
+
+Source: https://github.com/notofonts/noto-cjk
+File: Sans/SubsetOTF/SC/NotoSansSC-Regular.otf
+Upstream revision: f8d157532fbfaeda587e826d4cd5b21a49186f7c
+SHA-256: faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9
+
+This font is distributed under the SIL Open Font License, Version 1.1.
+See OFL.txt and the embedded font metadata for the upstream copyright notices.
+The font is not covered by XiLing's MIT source-code license.

@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/pet_idle.gd" id="1"]
+
+[node name="Main" type="Node2D"]
+
+[node name="Pet" type="AnimatedSprite2D" parent="."]
+position = Vector2(180, 240)
+script = ExtResource("1")

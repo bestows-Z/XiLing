@@ -1,0 +1,58 @@
+# Godot generated/cache/build content
+.godot/
+*.import
+/android/
+/build/
+/dist/
+/exports/
+*.exe
+*.dll
+*.so
+*.pck
+*.zip
+*.dmg
+*.app/
+.DS_Store
+*.tmp
+*.bak
+# Unused original Godot template icon; retained locally.
+/icon.svg
+*.log
+
+# Local-only original AI art and replacement assets
+/assets/pet/
+/assets/local/
+/local/
+
+# AI working notes are never product source
+.codex/
+.agents/
+.claude/
+AGENTS.md
+CLAUDE.md
+find.md
+Find.md
+doc/
+docs/
+plans/
+reports/
+/work/
+/outputs/
+*plan*.md
+*PLAN*.md
+*report*.md
+*REPORT*.md
+*draft*.md
+*DRAFT*.md
+
+# Credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+export_credentials.cfg
+secrets.*
