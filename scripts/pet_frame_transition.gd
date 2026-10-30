@@ -3,7 +3,7 @@ extends RefCounted
 var ghost: Sprite2D
 var outline: PackedVector2Array = PackedVector2Array()
 var _remaining: float = 0.0
-const DURATION: float = 0.045
+const DURATION: float = 0.075
 func begin(sprite: AnimatedSprite2D, texture: Texture2D, old_transform: Transform2D, old_global: Transform2D, old_outline: PackedVector2Array) -> void:
 	if sprite.get_parent() == null or texture == null: return
 	if ghost == null or not is_instance_valid(ghost):

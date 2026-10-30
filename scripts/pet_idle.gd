@@ -112,7 +112,6 @@ func _window_outline() -> PackedVector2Array:
 	var points: PackedVector2Array = PackedVector2Array()
 	points.append_array(animator.transition.outline)
 	var local_outline: PackedVector2Array = visual.get_outline() if skin.mode == &"native" else skin.outline
-	if animator.rig != null and animator.rig.visible: local_outline = animator.rig.get_outline(local_outline)
 	for point: Vector2 in local_outline:
 		points.append(get_global_transform_with_canvas() * point)
 	if effects != null:
@@ -127,7 +126,6 @@ func _window_outline() -> PackedVector2Array:
 
 func is_mouse_on_pet(viewport_point: Vector2 = Vector2.INF) -> bool:
 	var point: Vector2 = to_local(get_global_mouse_position()) if viewport_point == Vector2.INF else get_global_transform_with_canvas().affine_inverse() * viewport_point
-	if animator.rig != null and animator.rig.visible: return animator.rig.hit_test(point)
 	return visual.hit_test(point) if skin.mode == &"native" else skin.hit_test(point)
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -223,6 +221,7 @@ func trigger_reaction() -> void:
 	_interact(&"jump")
 
 func _on_action_changed(action: StringName) -> void:
+	if action == &"walk": animator.walk_distance = 0.0
 	menu.refresh(brain.snapshot())
 	if not brain.proactive and brain.since_interaction > 1.0: return
 	if brain.is_autonomous_activity() and action != &"idle":

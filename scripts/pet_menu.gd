@@ -22,6 +22,8 @@ var _title_label: Label
 var _hide_button: Button
 var _scroll: ScrollContainer
 var _ui_scale: float = 1.0
+var _tabs: TabBar
+var _pages: Array[ScrollContainer] = []
 
 func _ready() -> void:
 	layer = 10
@@ -74,14 +76,22 @@ func _ready() -> void:
 	status.add_theme_font_size_override("font_size", 16)
 	status.custom_minimum_size.y = 58
 	column.add_child(status)
-	_scroll = ScrollContainer.new()
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(_scroll)
-	var list: VBoxContainer = VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	list.add_theme_constant_override("separation", 9)
-	_scroll.add_child(list)
+	_tabs = TabBar.new()
+	_tabs.tab_alignment = TabBar.ALIGNMENT_CENTER
+	_tabs.add_theme_color_override("font_selected_color", Color("25465f"))
+	_tabs.add_theme_color_override("font_unselected_color", Color("4a657b"))
+	_tabs.add_theme_color_override("font_hovered_color", Color("25465f"))
+	_tabs.add_theme_stylebox_override("tab_selected", _style("bdddf2", 9, 8))
+	_tabs.add_theme_stylebox_override("tab_unselected", _style("dceefb", 9, 8))
+	_tabs.add_theme_stylebox_override("tab_hovered", _style("cde6f6", 9, 8))
+	column.add_child(_tabs)
+	for label: String in ["互动", "日常", "外观"]: _tabs.add_tab(label)
+	var interaction_list: VBoxContainer = _page(column)
+	var list: VBoxContainer = _page(column)
+	var appearance_list: VBoxContainer = _page(column)
+	_tabs.tab_changed.connect(_select_page)
+	_select_page(0)
+	_scroll = _pages[0]
 	_heading(list, "她的日常")
 	for entry: Array in [["自主生活", "autonomous"], ["自己在桌面散步", "roaming"], ["主动表达想法", "proactive"], ["夜间安静休息", "quiet_night"]]:
 		_add_toggle(list, entry[0], entry[1])
@@ -93,6 +103,12 @@ func _ready() -> void:
 	_controls["activity_rate"] = rate
 	rate.get_popup().theme = theme
 	list.add_child(rate)
+	var routine_help: Label = Label.new()
+	routine_help.text = "她会按心情和精力选择活动。\n活动之间会安静待一会儿，鼠标靠近时停步。"
+	routine_help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	routine_help.add_theme_font_size_override("font_size", 16)
+	list.add_child(routine_help)
+	list = appearance_list
 	_heading(list, "外观与窗口")
 	_scale_label = Label.new()
 	list.add_child(_scale_label)
@@ -121,6 +137,10 @@ func _ready() -> void:
 	skin_selector.get_popup().theme = theme
 	skin_selector.item_selected.connect(func(index: int) -> void: skin_requested.emit(&"original" if index == 0 else &"custom"))
 	list.add_child(skin_selector)
+	var reset: Button = _button("恢复默认设置")
+	reset.pressed.connect(func() -> void: reset_requested.emit())
+	list.add_child(reset)
+	list = interaction_list
 	_heading(list, "陪她玩一会儿")
 	var grid: GridContainer = GridContainer.new()
 	grid.columns = 3
@@ -136,14 +156,14 @@ func _ready() -> void:
 	var bubble: Button = _button("泡泡游戏 · 20 秒")
 	bubble.pressed.connect(func() -> void: action_requested.emit(&"bubbles"); close())
 	list.add_child(bubble)
+	var settle: Button = _button("休息一下 · 停下当前动作")
+	settle.pressed.connect(func() -> void: action_requested.emit(&"idle"); close())
+	list.add_child(settle)
 	var help: Label = Label.new()
 	help.text = "轻点摸摸 · 双击挥手 · 按住移动拖拽\n右键 / M 设置 · 空格跳跃 · B 泡泡"
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help.add_theme_font_size_override("font_size", 18)
 	list.add_child(help)
-	var reset: Button = _button("恢复默认设置")
-	reset.pressed.connect(func() -> void: reset_requested.emit())
-	list.add_child(reset)
 	var footer: HBoxContainer = HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 8)
 	column.add_child(footer)
@@ -169,6 +189,21 @@ func _ready() -> void:
 	hint.add_theme_color_override("font_outline_color", Color("24445f"))
 	hint.add_theme_constant_override("outline_size", 5)
 	add_child(hint)
+
+func _page(column: VBoxContainer) -> VBoxContainer:
+	var scroll: ScrollContainer = ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(scroll)
+	_pages.append(scroll)
+	var list: VBoxContainer = VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 9)
+	scroll.add_child(list)
+	return list
+
+func _select_page(index: int) -> void:
+	for page: int in range(_pages.size()): _pages[page].visible = page == index
 
 func _style(color: String, margin: int, radius: int) -> StyleBoxFlat:
 	var style: StyleBoxFlat = StyleBoxFlat.new()

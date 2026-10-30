@@ -5,7 +5,7 @@ var direction: float = 1.0
 var distance: float = 0.0
 var active: bool = false
 var hover_paused: bool = false
-var speed: float = 38.0
+var speed: float = 70.0
 var _bounds: Rect2
 var _time: float = 0.0
 const EASE_TIME: float = 0.5

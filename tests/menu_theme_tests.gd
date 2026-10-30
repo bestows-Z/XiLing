@@ -16,6 +16,11 @@ func run() -> void:
 	root.add_child(menu)
 	await process_frame
 	var theme: Theme = menu.panel.theme
+	check(menu._tabs.tab_count==3 and menu._pages[0].visible,"interaction page opens first in the compact settings window")
+	menu._tabs.current_tab = 1
+	check(menu._pages[1].visible and not menu._pages[0].visible and not menu._pages[2].visible,"routine tab shows only its own controls")
+	menu._tabs.current_tab = 2
+	check(menu._pages[2].visible and not menu._pages[1].visible,"appearance tab keeps separate scroll content")
 	for type_name: StringName in [&"Button",&"CheckButton",&"OptionButton"]:
 		for name: StringName in [&"font_hover_color",&"font_hover_pressed_color",&"font_focus_color",&"font_pressed_color"]:
 			var color: Color = theme.get_color(name,type_name)

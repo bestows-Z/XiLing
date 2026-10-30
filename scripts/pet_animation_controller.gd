@@ -1,6 +1,6 @@
 extends RefCounted
 const FrameTransition = preload("res://scripts/pet_frame_transition.gd")
-const WalkRig = preload("res://scripts/pet_walk_rig.gd")
+const MotionClips = preload("res://scripts/pet_motion_clips.gd")
 ## 表现层统一入口：原始待机 PNG、实际动作图集、外部多帧资源。
 var sprite: AnimatedSprite2D
 var visual: Node2D
@@ -20,11 +20,7 @@ var walk_direction: float = 1.0
 var _delta: float = 0.0
 var _last_action: StringName = &""
 var _walk_progress: float = 0.0
-var rig: Node2D
-var _rig_amount: float = 0.0
-var _rig_phase: float = 0.0
 var window_offset: Vector2 = Vector2.ZERO
-var _warm_frames: int = 2
 
 func setup(target: AnimatedSprite2D, drawing: Node2D, adapter: RefCounted, character: Resource = null) -> void:
 	sprite = target
@@ -33,12 +29,6 @@ func setup(target: AnimatedSprite2D, drawing: Node2D, adapter: RefCounted, chara
 	skin = adapter
 	origin = target.position
 	_rng.randomize()
-	rig = WalkRig.new()
-	rig.name = "ContinuousWalk"
-	sprite.add_child(rig)
-	if skin.frames != null and skin.frames.has_animation(&"idle"):
-		rig.setup(skin.frames.get_frame_texture(&"idle",0))
-	rig.hide()
 
 func tick(delta: float, brain: RefCounted) -> void:
 	_delta = delta
@@ -60,7 +50,7 @@ func apply(brain: RefCounted) -> void:
 	var action: StringName = brain.action if enabled else &"idle"
 	var progress: float = brain.progress() if enabled else 0.0
 	if action == &"walk":
-		if not walk_paused: _walk_progress = fposmod(walk_distance / 54.0, 1.0)
+		if not walk_paused: _walk_progress = fposmod(walk_distance / MotionClips.WALK_DISTANCE, 1.0)
 		progress = _walk_progress
 	var old_texture: Texture2D
 	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation(sprite.animation) and sprite.sprite_frames.get_frame_count(sprite.animation) > sprite.frame:
@@ -75,25 +65,6 @@ func apply(brain: RefCounted) -> void:
 	sprite.position = origin+window_offset
 	sprite.rotation = 0.0
 	sprite.self_modulate.a = 1.0
-	if skin.mode==&"original" and rig != null and not rig.configured and skin.frames != null and skin.original_path=="res://assets/pet/xiaoxi.png":
-		rig.setup(skin.frames.get_frame_texture(&"idle",0))
-	var rig_walk: bool = action == &"walk" and skin.mode == &"original" and rig != null and rig.configured
-	var target_amount: float = 1.0 if rig_walk and not walk_paused else 0.0
-	_rig_amount = move_toward(_rig_amount,target_amount,_delta/0.18) if _delta>0.0 else target_amount
-	if not rig_walk and action != &"idle": _rig_amount = 0.0
-	if skin.mode == &"original" and rig != null and rig.configured and (rig_walk or _rig_amount>0.0):
-		skin.apply(sprite,&"idle",0.0,blinking and enabled)
-		visual.hide()
-		rig.set_texture(sprite.sprite_frames.get_frame_texture(sprite.animation,sprite.frame))
-		if rig_walk and not walk_paused: _rig_phase = fposmod(walk_distance/WalkRig.CYCLE_DISTANCE,1.0)
-		rig.set_pose(_rig_phase,_rig_amount)
-		rig.show()
-		sprite.self_modulate.a = 0.0
-		if walk_direction<0.0: sprite.scale.x = -absf(sprite.scale.x)
-		transition.finish(sprite)
-		_last_action = action
-		return
-	if rig != null: rig.hide()
 	if skin.mode == &"native":
 		sprite.scale = Vector2.ONE
 		sprite.sprite_frames = null
@@ -110,40 +81,39 @@ func apply(brain: RefCounted) -> void:
 			progress = fposmod(brain.action_elapsed * skin.frames.get_animation_speed(chosen) / total, 1.0) if enabled else 0.0
 	if action == &"walk": progress = _walk_progress
 	elif action == &"sleep" and skin.mode == &"original": progress = 0.0
-	elif skin.mode == &"original" and action not in [&"idle",&"drag",&"sleep"]:
+	elif skin.mode == &"original" and not MotionClips.is_clip(skin.frames,action) and action not in [&"idle",&"drag",&"sleep"]:
 		progress = _picture_progress(action,brain.action_elapsed)
+	elif skin.mode == &"original" and MotionClips.is_clip(skin.frames,action):
+		var duration: float = skin.total_frame_duration(action)
+		progress = fposmod(brain.action_elapsed,duration)/duration if skin.frames.get_animation_loop(action) else clampf(brain.action_elapsed/duration,0.0,1.0)
 	skin.apply(sprite, action, progress, (blinking and enabled) or action == &"sleep")
 	sprite.position += skin.frame_offset
 	if action == &"walk" and walk_direction < 0:
 		sprite.scale.x = -absf(sprite.scale.x)
 		sprite.position.x = origin.x+window_offset.x - skin.frame_offset.x
-	if skin.mode == &"original" and enabled:
+	if skin.mode == &"original" and enabled and not MotionClips.is_clip(skin.frames,action):
 		sprite.position.y += sin(elapsed * 1.2) * (2.0 if action == &"idle" else 0.6)
 		sprite.scale *= 1.0 + sin(elapsed * 1.6) * 0.005
 		var reaction: float = sin(progress * PI) if action == &"jump" else 0.0
 		sprite.position.y -= reaction * 12.0
 	var new_texture: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame) if sprite.sprite_frames != null else null
-	if enabled and old_texture != null and new_texture != old_texture and (action != _last_action or (new_texture is AtlasTexture and old_texture is AtlasTexture)):
+	if enabled and old_texture != null and new_texture != old_texture and (action != _last_action or (not MotionClips.is_clip(skin.frames,action) and new_texture is AtlasTexture and old_texture is AtlasTexture)):
 		transition.begin(sprite, old_texture, old_transform, old_global, old_outline)
 	transition.tick(sprite, _delta, enabled)
 	_last_action = action
-	if _warm_frames>0 and action==&"idle" and skin.mode==&"original" and rig != null and rig.configured:
-		rig.set_pose(0.0,0.0)
-		rig.show()
-		if _delta>0.0: _warm_frames-=1
 
 func _picture_progress(action: StringName, seconds: float) -> float:
-	# 按8–12fps播放短动作，状态剩余时间停在收势帧；不再把六帧均摊到几秒。
+	# 旧图集兼容路径；新的完整片段使用各帧实际时长。
 	var order: Array = [0,1,2,3,4,5]
-	var fps: float = 10.0
+	var fps: float = 5.5
 	var looped: bool = false
 	match action:
 		&"wave": order = [0,1,2,3,2,3,4,5]
-		&"dance": fps = 8.0; looped = true
+		&"dance": fps = 5.0; looped = true
 		&"feed": order = [0,1,2,3,4,3,4,5]
-		&"stretch",&"wake": order = [0,1,2,2,2,3,3,3,4,5]; fps = 8.0
-		&"groom": order = [0,1,2,2,3,3,4,5]; fps = 8.0
-		&"jump": order = [0,1,2,3,4,4,5,0]; fps = 12.0
+		&"stretch",&"wake": order = [0,1,2,2,2,3,3,3,4,5]; fps = 5.0
+		&"groom": order = [0,1,2,2,3,3,4,5]; fps = 5.0
+		&"jump": order = [0,1,2,3,4,4,5,0]; fps = 7.0
 	var index: int = int(maxf(seconds,0.0)*fps)
 	index = index%order.size() if looped else mini(index,order.size()-1)
 	return (float(order[index])+0.01)/6.0

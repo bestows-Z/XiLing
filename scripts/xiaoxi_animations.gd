@@ -52,6 +52,7 @@ static func append_to(frames: SpriteFrames) -> void:
 		frames.add_animation(pair[0])
 		frames.set_animation_loop(pair[0], false)
 		for index: int in range(6): frames.add_frame(pair[0], frames.get_frame_texture(pair[1], index))
+	preload("res://scripts/pet_motion_clips.gd").append_to(frames)
 
 static func _cell(sheet: Texture2D, columns: int, rows: int, index: int) -> AtlasTexture:
 	var texture: AtlasTexture = AtlasTexture.new()
